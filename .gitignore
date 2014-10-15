@@ -4,8 +4,8 @@
 ##Custom Filters
 SDL2
 SDL
-/SDL2
-/SDL
+GabeUI/SDL2
+GabeUI/SDL
 
 # User-specific files
 *.suo
