@@ -58,6 +58,7 @@ public:
 	void Cleanup();
 private:
 	bool Rescan();
+	bool RescanGui(SDL_Renderer *ren);
 };
 
 #endif

@@ -52,10 +52,9 @@ WifiManager::WifiManager(){
 
 bool WifiManager::InitWifiInterface(){
 	DWORD clientVersion = 0;
-	DWORD dwResult = 0;
 
 	//Open handles & get wireless interface
-	if ((dwResult = WlanOpenHandle(WLAN_API_VERSION, NULL, &clientVersion, &WifiHandle)) != ERROR_SUCCESS)
+	if (WlanOpenHandle(WLAN_API_VERSION, NULL, &clientVersion, &WifiHandle) != ERROR_SUCCESS)
 		return false;
 	if (WLAN_API_VERSION_MAJOR(clientVersion) < WLAN_API_VERSION_MAJOR(WLAN_API_VERSION_2_0)) //Ew, gross. Windows XP.
 		return false;
@@ -73,10 +72,10 @@ bool WifiManager::InitWifiInterface(){
 	WifiManager::Rescan();
 		
 	//Cleanup!
-	if (interfaceList != NULL) {
-		WlanFreeMemory(interfaceList);
-		interfaceList = NULL;
-	}
+	//if (interfaceList != NULL) {
+	//	WlanFreeMemory(interfaceList);
+	//	interfaceList = NULL;
+	//}
 	return true;
 }
 
@@ -84,17 +83,30 @@ bool WifiManager::Rescan(){
 	while (!NetList.empty()){ //empty out the vector
 		NetList.erase(NetList.begin());
 	}
+
+	DWORD dwResult = 0;
 	
 	//Get list of nearby connections
 	PWLAN_AVAILABLE_NETWORK_LIST aNetList = NULL;
-	if (WlanGetAvailableNetworkList(WifiHandle, &NetInterface->InterfaceGuid, 0x00, NULL, &aNetList) != ERROR_SUCCESS)
+	if ((dwResult = WlanGetAvailableNetworkList(WifiHandle, &NetInterface->InterfaceGuid, 0, NULL, &aNetList)) != ERROR_SUCCESS) {
+		char *err;
+		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwResult, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&err, 0, NULL);
+		std::cout << err << std::endl;
 		return false;
+	}
 
 	//DATA MANAGEMENT!!
 	for (int i = 0; i < (int)aNetList->dwNumberOfItems; i++) { //throw this mess in a vector so I can actually use it
-		if (aNetList->Network[i].bNetworkConnectable)
+		if (aNetList->Network[i].bNetworkConnectable && aNetList->Network[i].dot11Ssid.uSSIDLength != 0)
 			NetList.push_back(aNetList->Network[i]);
 	}
+
+	//God damn you hidden networks
+	for (unsigned int i = 0; i < NetList.size(); i++){
+		if (NetList[i].dot11Ssid.ucSSID[0] == 0) //Yeah, if your SSID starts with an empty char this DOES fuck up. Maybe dont do that.
+			NetList.erase(NetList.begin() + i);
+	}
+
 
 	int starting = 0;
 	WLAN_AVAILABLE_NETWORK tempNet;
@@ -119,8 +131,8 @@ bool WifiManager::Rescan(){
 	}
 
 	for (unsigned int i = 0; i < NetList.size(); i++){ //Erase Dupelicate elements (TODO: Actual reason to delete them?)
+		std::string temp(NetList[i].dot11Ssid.ucSSID, NetList[i].dot11Ssid.ucSSID + NetList[i].dot11Ssid.uSSIDLength);
 		for (unsigned int k = i + 1; k < NetList.size(); k++){
-			std::string temp(NetList[i].dot11Ssid.ucSSID, NetList[i].dot11Ssid.ucSSID + NetList[i].dot11Ssid.uSSIDLength);
 			std::string temp2(NetList[k].dot11Ssid.ucSSID, NetList[k].dot11Ssid.ucSSID + NetList[k].dot11Ssid.uSSIDLength);
 			if (temp == temp2){
 				if (!(NetList[k].dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE)){
@@ -131,10 +143,10 @@ bool WifiManager::Rescan(){
 	}
 
 	//Cleanup!
-	if (aNetList != NULL) {
-		WlanFreeMemory(aNetList);
-		aNetList = NULL;
-	}
+	//if (aNetList != NULL) {
+	//	WlanFreeMemory(aNetList);
+	//	aNetList = NULL;
+	//}
 	return true;
 }
 
@@ -181,25 +193,6 @@ bool WifiManager::InitGui(std::string ButtonIconPath, TTF_Font *font, SDL_Render
 	}
 	Bars.push_back(temp);
 
-
-	SDL_Surface *tempSurf = NULL;
-	SDL_Texture *tempText = NULL;
-	//Save the SSIDs as Texture Data
-	for (unsigned int i = 0; i < NetList.size(); i++){	
-		std::string tempString(NetList[i].dot11Ssid.ucSSID, NetList[i].dot11Ssid.ucSSID + NetList[i].dot11Ssid.uSSIDLength);
-		tempSurf = TTF_RenderText_Blended(textFont, tempString.c_str(), TextColor);
-		if (tempSurf == nullptr){
-			return false;
-		}
-		tempText = SDL_CreateTextureFromSurface(ren, tempSurf);
-		if (tempText == nullptr){
-			SDL_FreeSurface(tempSurf);
-			return false;
-		}
-		SSIDs.push_back(tempText);
-	}
-	SDL_FreeSurface(tempSurf);
-
 	//Calculate all themthere widths
 	bwidth = getWidth(ButtonImage);
 	bheight = getHeight(ButtonImage);
@@ -210,7 +203,41 @@ bool WifiManager::InitGui(std::string ButtonIconPath, TTF_Font *font, SDL_Render
 	return true;
 }
 
+bool WifiManager::RescanGui(SDL_Renderer *ren){
+	if (SSIDs.size() != NetList.size()) {
+		if (SSIDs.size() != 0) {
+			while (!SSIDs.empty()){ //empty out the vector
+				SDL_free((*SSIDs.begin()));
+				SSIDs.erase(SSIDs.begin());
+			}
+		}
+		SDL_Surface *tempSurf = NULL;
+		SDL_Texture *tempText = NULL;
+		//Save the SSIDs as Texture Data
+		for (unsigned int i = 0; i < NetList.size(); i++){
+			std::string tempString(NetList[i].dot11Ssid.ucSSID, NetList[i].dot11Ssid.ucSSID + NetList[i].dot11Ssid.uSSIDLength);
+			tempSurf = TTF_RenderText_Blended(textFont, tempString.c_str(), TextColor);
+			if (tempSurf == nullptr){
+				return false;
+			}
+			tempText = SDL_CreateTextureFromSurface(ren, tempSurf);
+			if (tempText == nullptr){
+				SDL_FreeSurface(tempSurf);
+				return false;
+			}
+			SSIDs.push_back(tempText);
+		}
+		SDL_FreeSurface(tempSurf);
+		return true;
+	}
+	else
+		return true;
+}
+
 void WifiManager::Render(SDL_Renderer *ren){
+
+	WifiManager::RescanGui(ren);
+
 	ButtonBack.x = bx - padding;
 	ButtonBack.y = by - padding;
 	ButtonBack.w = bwidth + 2 * padding;
@@ -295,8 +322,10 @@ void WifiManager::Render(SDL_Renderer *ren){
 }
 
 bool WifiManager::Activate(){
-	if (state == WIFI_BUTTON_STATE_SELECTED)
+	if (state == WIFI_BUTTON_STATE_SELECTED) {
 		state = WIFI_BUTTON_STATE_ACTIVE;
+		WifiManager::Rescan(); //Rescan networks when we reopen the menu
+	}
 	return true;
 }
 
