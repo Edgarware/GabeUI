@@ -310,11 +310,22 @@ void WifiManager::Render(SDL_Renderer *ren){
 
 			//Draw Text
 			if (i < SSIDs.size()){ //man shit is fucked otherwise
+				dst.x = 0;
+				dst.y = 0;
+				if (getWidth(SSIDs[i]) > nwidth - (sidePadding * 2))
+					dst.w = nwidth - (sidePadding*2);
+				else
+					dst.w = getWidth(SSIDs[i]);
+				dst.h = getHeight(SSIDs[i]);
+
 				dst2.x = tempx + sidePadding;
 				dst2.y = tempy + (nwidth / 2) + sidePadding;
-				dst2.w = getWidth(SSIDs[i]);
+				if (getWidth(SSIDs[i]) > nwidth - (sidePadding * 2))
+					dst2.w = nwidth - (sidePadding * 2);
+				else
+					dst2.w = getWidth(SSIDs[i]);
 				dst2.h = getHeight(SSIDs[i]);
-				SDL_RenderCopy(ren, SSIDs[i], NULL, &dst2);
+				SDL_RenderCopy(ren, SSIDs[i], &dst, &dst2);
 			}
 			tempx += nwidth;
 		}
@@ -330,8 +341,22 @@ bool WifiManager::Activate(){
 }
 
 void WifiManager::DeActivate(){
-	if (state == WIFI_BUTTON_STATE_ACTIVE)
+	if (state == WIFI_BUTTON_STATE_ACTIVE) {
 		state = WIFI_BUTTON_STATE_SELECTED;
+		selected = 0;
+	}
+}
+
+void WifiManager::MoveLeft(){
+	if (selected == 0 || NetList.size() == 0) {}
+	else
+		selected--;
+}
+
+void WifiManager::MoveRight(){
+	if (selected == NetList.size() - 1 || NetList.size() == 0) {}
+	else
+		selected++;
 }
 
 void WifiManager::Cleanup(){

@@ -2,7 +2,7 @@
 
 #define JOY_BUFFER 10000
 #define JOY_TIME 200
-#define DEBUG 1 //flag to run game in windowed mode. used in debug mode to see console
+#define DEBUG 0 //flag to run game in windowed mode. used in debug mode to see console
 
 /* COLOR MAP SO I DONT HAVE TO REMEMBER
  * #343438 #005F6B #008C9E #00B4CC #00DFFC
@@ -410,7 +410,9 @@ void App::goLeft(){
 		Wireless->state = WIFI_BUTTON_STATE_UNSELECTED;
 		Steam->state = BUTTON_STATE_SELECTED;
 	}
-	else if (Wireless->state == WIFI_BUTTON_STATE_ACTIVE){} //TODO
+	else if (Wireless->state == WIFI_BUTTON_STATE_ACTIVE){
+		Wireless->MoveLeft();
+	} 
 	else if(Options->state == BUTTON_STATE_SELECTED) {
 		Options->state = BUTTON_STATE_UNSELECTED;
 		Wireless->state = WIFI_BUTTON_STATE_SELECTED;
@@ -461,7 +463,9 @@ void App::goRight(){
 		Wireless->state = WIFI_BUTTON_STATE_UNSELECTED;
 		Options->state = BUTTON_STATE_SELECTED;
 	}
-	else if (Wireless->state == WIFI_BUTTON_STATE_ACTIVE){} //TODO
+	else if (Wireless->state == WIFI_BUTTON_STATE_ACTIVE){
+		Wireless->MoveRight();
+	}
 	else if(Options->state == BUTTON_STATE_SELECTED) {
 		Options->state = BUTTON_STATE_UNSELECTED;
 		Exit->state = BUTTON_STATE_SELECTED;

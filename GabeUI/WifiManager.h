@@ -55,6 +55,8 @@ public:
 	void Render(SDL_Renderer *ren);
 	bool Activate();
 	void DeActivate();
+	void MoveRight();
+	void MoveLeft();
 	void Cleanup();
 private:
 	bool Rescan();
