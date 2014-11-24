@@ -88,7 +88,7 @@ void MenuButton::Render(SDL_Renderer *ren){
 
 void MenuButton::Cleanup() {
 	popMenu->Cleanup();
-	SDL_free(popMenu);
+	//SDL_free(popMenu);
 	Button::Cleanup();
 	SDL_DestroyTexture(Shadow);
 	Shadow = NULL;

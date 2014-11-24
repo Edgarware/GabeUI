@@ -3,6 +3,7 @@
 #define JOY_BUFFER 10000
 #define JOY_TIME 200
 #define DEBUG 0 //flag to run game in windowed mode. used in debug mode to see console
+#define SPECIAL 0
 
 /* COLOR MAP SO I DONT HAVE TO REMEMBER
  * #343438 #005F6B #008C9E #00B4CC #00DFFC
@@ -147,6 +148,20 @@ int App::Main(int argc, char** argv){
 		logSDLError(std::cout, "StartupItemLaunch");
 
 	//Init Buttons
+	if (SPECIAL == 1){
+		DB = new MainButton;
+		if (!DB->Init((SDL_GetBasePath() + (std::string)"Assets\\DB_size.png"), renderer)) {
+			logSDLError(std::cout, "CreateButton");
+		}
+		DB->AppPath = "C:\\Program Files (x86)\\Mozilla Firefox\\Firefox.exe";
+		DB->AppParams = "-url www.twitch.tv/desertbus";
+		DB->bname = "desertbus";
+		DB->scale = 0;
+		DB->shadowOffset = 0;
+		DB->shadowPadding = 0;
+		ButtonList.push_back(DB);
+	}
+
 	Steam = new MainButton;
 	if(!Steam->Init((SDL_GetBasePath() + (std::string)"Assets\\steam.jpg"),renderer)) {
 		logSDLError(std::cout, "CreateButton");
@@ -209,15 +224,16 @@ int App::Main(int argc, char** argv){
 	//main buttons
 	temp = ((float)(wW)/2) - ((float)(sidePadding)/2) - (float)sidePadding;
 	
-	Steam->x = sidePadding;
-	Steam->y = sidePadding;
+	Steam->SetXY(sidePadding, sidePadding);
 	Steam->SetProportionalSize((int)temp);
 	
-	Plex->x = (wW/2) + (sidePadding/2);
-	Plex->y = sidePadding;
+	Plex->SetXY((wW / 2) + (sidePadding / 2), sidePadding);
 	Plex->SetProportionalSize((int)temp);
 	
 	//menu buttons
+	if (SPECIAL == 1){
+		DB->SetXY(sidePadding, wH - sidePadding);
+	}
 	Exit->x = wW - sidePadding - (sidePadding/2);
 	Exit->y = wH - sidePadding;
 	
@@ -380,15 +396,19 @@ int App::Main(int argc, char** argv){
 	//Error checking is for suckers (not like we can do anything about it)
 
 	//CLEANUP
-	for(std::vector<Button*>::iterator ButtonListIt = ButtonList.begin(); ButtonListIt != ButtonList.end(); ButtonListIt++) {
-		(*ButtonListIt)->Cleanup();
-		SDL_free((*ButtonListIt));
-	}
+	//for(std::vector<Button*>::iterator ButtonListIt = ButtonList.begin(); ButtonListIt != ButtonList.end(); ButtonListIt++) {
+	//	(*ButtonListIt)->Cleanup();
+	//	SDL_free((*ButtonListIt));
+	//}
+	Steam->Cleanup();
+	Plex->Cleanup();
+	Exit->Cleanup();
+	Options->Cleanup();
 	Wireless->Cleanup();
-	SDL_free(Steam);
-	SDL_free(Plex);
-	SDL_free(Options);
-	SDL_free(Exit);
+	//SDL_free(Steam);
+	//SDL_free(Plex);
+	//SDL_free(Options);
+	//SDL_free(Exit);
 	cleanup(font,window,renderer);
 	SDL_GameControllerClose(controller);
 	IMG_Quit();
@@ -408,7 +428,12 @@ void App::goLeft(){
 	else if(Steam->state == BUTTON_STATE_SELECTED) {}
 	else if (Wireless->state == WIFI_BUTTON_STATE_SELECTED) {
 		Wireless->state = WIFI_BUTTON_STATE_UNSELECTED;
-		Steam->state = BUTTON_STATE_SELECTED;
+		if (SPECIAL == 1){
+			DB->state = BUTTON_STATE_SELECTED;
+		}
+		else{
+			Steam->state = BUTTON_STATE_SELECTED;
+		}
 	}
 	else if (Wireless->state == WIFI_BUTTON_STATE_ACTIVE){
 		Wireless->MoveLeft();
@@ -423,6 +448,9 @@ void App::goLeft(){
 		Options->state = BUTTON_STATE_SELECTED;
 	}
 	else if(Exit->state == BUTTON_STATE_ACTIVE) {}
+	else if (SPECIAL == 1){
+		if (DB->state == BUTTON_STATE_SELECTED){}
+	}
 	else
 		Steam->state = BUTTON_STATE_SELECTED;
 }
@@ -449,6 +477,12 @@ void App::goUp(){
 	else if(Exit->state == BUTTON_STATE_ACTIVE) {
 		Exit->popMenu->MoveUp();
 	}
+	else if (SPECIAL == 1){
+		if (DB->state == BUTTON_STATE_SELECTED){
+			DB->state = BUTTON_STATE_UNSELECTED;
+			Steam->state = BUTTON_STATE_SELECTED;
+		}
+	}
 	else
 		Steam->state = BUTTON_STATE_SELECTED;
 }
@@ -473,28 +507,42 @@ void App::goRight(){
 	else if(Options->state == BUTTON_STATE_ACTIVE) {}
 	else if(Exit->state == BUTTON_STATE_SELECTED) {}
 	else if(Exit->state == BUTTON_STATE_ACTIVE) {}
+	else if (SPECIAL == 1){
+		if (DB->state == BUTTON_STATE_SELECTED){
+			DB->state = BUTTON_STATE_UNSELECTED;
+			Wireless->state = BUTTON_STATE_SELECTED;
+		}
+	}
 	else
 		Plex->state = BUTTON_STATE_SELECTED;
 }
 void App::goDown(){
-	if(focus == false) return;
-	if(Steam->state == BUTTON_STATE_SELECTED){
+	if (focus == false) return;
+	if (Steam->state == BUTTON_STATE_SELECTED){
 		Steam->state = BUTTON_STATE_UNSELECTED;
-		Wireless->state = WIFI_BUTTON_STATE_SELECTED;
+		if (SPECIAL == 1){
+			DB->state = WIFI_BUTTON_STATE_SELECTED;
+		}
+		else{
+			Wireless->state = WIFI_BUTTON_STATE_SELECTED;
+		}
 	}
-	else if(Plex->state == BUTTON_STATE_SELECTED){
+	else if (Plex->state == BUTTON_STATE_SELECTED){
 		Plex->state = BUTTON_STATE_UNSELECTED;
 		Wireless->state = WIFI_BUTTON_STATE_SELECTED;
 	}
 	else if (Wireless->state == WIFI_BUTTON_STATE_SELECTED) {}
 	else if (Wireless->state == WIFI_BUTTON_STATE_ACTIVE){} //TODO
-	else if(Options->state == BUTTON_STATE_SELECTED) {}
-	else if(Options->state == BUTTON_STATE_ACTIVE) {
+	else if (Options->state == BUTTON_STATE_SELECTED) {}
+	else if (Options->state == BUTTON_STATE_ACTIVE) {
 		Options->popMenu->MoveDown();
 	}
-	else if(Exit->state == BUTTON_STATE_SELECTED) {}
-	else if(Exit->state == BUTTON_STATE_ACTIVE) {
+	else if (Exit->state == BUTTON_STATE_SELECTED) {}
+	else if (Exit->state == BUTTON_STATE_ACTIVE) {
 		Exit->popMenu->MoveDown();
+	}
+	else if (SPECIAL == 1){
+		if (DB->state == BUTTON_STATE_SELECTED){}
 	}
 	else
 		Wireless->state = WIFI_BUTTON_STATE_SELECTED;

@@ -5,7 +5,9 @@ MainButton::MainButton(){
 	LastTime = 0;
 	scale = 10;
 	TimeToWait = 10;
+	activeAnim = 10;
 	shadowOffset = -10;
+	shadowPadding = 40;
 	animState = BUTTON_ANIM_INACTIVE;
 	MaskColor.r = 0x00;
 	MaskColor.g = 0x00;
@@ -43,32 +45,52 @@ bool MainButton::Init(std::string ImagePath, SDL_Renderer *ren){
 	return true;
 }
 
-void MainButton::SetProportionalSize(int width){
-	Button::SetProportionalSize(width);
-	//Set new animation references
-	//Set small button size
-	S_Size.x = x;
-	S_Size.y = y;
-	S_Size.w = w;
-	S_Size.h = h;
+void MainButton::SetXY(int X, int Y){
+	if (animState == BUTTON_ANIM_INACTIVE){
+		x = X;
+		y = Y;
+		S_Size.x = x;
+		S_Size.y = y;
+		B_Size.x = x - 2 * scale;
+		B_Size.y = y - scale;
+	}
+}
 
-	//Calculate large button size
-	B_Size.x = x - 2*scale;
-	B_Size.y = y - scale;
-	B_Size.w = w + 4*scale;
-	B_Size.h = h + 2*scale;
+void MainButton::SetProportionalSize(int width){
+	if (animState == BUTTON_ANIM_INACTIVE){
+		Button::SetProportionalSize(width);
+		//Set new animation references
+		//Set small button size
+		S_Size.w = w;
+		S_Size.h = h;
+
+		//Calculate large button size
+		B_Size.w = w + 4 * scale;
+		B_Size.h = h + 2 * scale;
+	}
 }
 
 bool MainButton::Activate(){
 	DWORD iRes = (DWORD)ShellExecute(NULL, "open", AppPath.c_str(), AppParams.c_str(), NULL, SW_NORMAL);
 	if(iRes < 32)
 		return false;
+	//animState = BUTTON_ANIM_ACTIVE_DOWN;
 	return true;
 }
 
 void MainButton::Render(SDL_Renderer *ren){
 	//Run Animation logic
-	Animate();
+	if (scale != 0){
+		Animate();
+	}
+	else{
+		if (state == BUTTON_STATE_SELECTED){
+			MaskColor.a = 0x00;
+		}
+		else{
+			MaskColor.a = 0xA0;
+		}
+	}
 
 	//Calculate Mask size after Animation
 	Mask.x = x;
@@ -80,8 +102,8 @@ void MainButton::Render(SDL_Renderer *ren){
 	SDL_Rect dst;
 	dst.x = S_Size.x + shadowOffset;
 	dst.y = S_Size.y + shadowOffset;
-	dst.w = S_Size.w + 40;
-	dst.h = S_Size.h + 40;
+	dst.w = S_Size.w + shadowPadding;
+	dst.h = S_Size.h + shadowPadding;
 	SDL_RenderCopy(ren, Shadow, NULL, &dst);
 	
 	//Draw Image

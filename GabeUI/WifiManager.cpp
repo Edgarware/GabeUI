@@ -71,7 +71,7 @@ bool WifiManager::InitWifiInterface(){
 
 	WifiManager::Rescan();
 		
-	//Cleanup!
+	//Cleanup! Or it would be if this didnt also free NetInterface for some reason??
 	//if (interfaceList != NULL) {
 	//	WlanFreeMemory(interfaceList);
 	//	interfaceList = NULL;
@@ -103,7 +103,7 @@ bool WifiManager::Rescan(){
 
 	//God damn you hidden networks
 	for (unsigned int i = 0; i < NetList.size(); i++){
-		if (NetList[i].dot11Ssid.ucSSID[0] == 0) //Yeah, if your SSID starts with an empty char this DOES fuck up. Maybe dont do that.
+		if (NetList[i].dot11Ssid.ucSSID[0] == 0) //Yeah, if your SSID starts with an empty char this DOES screw up. Maybe dont do that.
 			NetList.erase(NetList.begin() + i);
 	}
 
@@ -309,7 +309,7 @@ void WifiManager::Render(SDL_Renderer *ren){
 				SDL_RenderCopy(ren, Bars[5], NULL, &dst);
 
 			//Draw Text
-			if (i < SSIDs.size()){ //man shit is fucked otherwise
+			if (i < SSIDs.size()){
 				dst.x = 0;
 				dst.y = 0;
 				if (getWidth(SSIDs[i]) > nwidth - (sidePadding * 2))
@@ -368,6 +368,10 @@ void WifiManager::Cleanup(){
 		WlanFreeMemory(NetInterface);
 	}*/
 
+	for (std::vector<SDL_Texture*>::iterator SSIDsIt = SSIDs.begin(); SSIDsIt != SSIDs.end(); SSIDsIt++){
+		SDL_DestroyTexture((*SSIDsIt));
+		(*SSIDsIt) = NULL;
+	}
 	SDL_DestroyTexture(ButtonImage);
 	ButtonImage = NULL;
 	SDL_DestroyTexture(ButtonShadow);

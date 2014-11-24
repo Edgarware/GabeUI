@@ -28,6 +28,7 @@ public:
 	MainButton *Plex;
 	MenuButton *Options;
 	MenuButton *Exit;
+	MainButton *DB;
 	SDL_Event e;
 	bool wifiOn;
 	bool quit;
