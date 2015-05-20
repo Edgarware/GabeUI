@@ -1,9 +1,9 @@
 #ifndef MENU_H_
 #define MENU_H_
 
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <vector>
 #include <string>
 
@@ -12,7 +12,7 @@
 //I'm pretty happy with this finally
 
 class Menu {
-public: 
+public:
 	//yo dog, i heard you like objects, so I made an object that contains an object that holds a list of objects
 	std::vector<MenuItem> MenuItems;
 	SDL_Texture *Shadow;
@@ -21,7 +21,7 @@ public:
 	int w;
 	int h;
 	int selected;
-	
+
 public:
 	Menu();
 	~Menu();

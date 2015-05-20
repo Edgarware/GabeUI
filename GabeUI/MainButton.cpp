@@ -26,8 +26,8 @@ MainButton::MainButton(){
 bool MainButton::Init(std::string ImagePath, SDL_Renderer *ren){
 	//Load Texture
 	Button::Init(ImagePath, ren);
-	Shadow = IMG_LoadTexture(ren, (SDL_GetBasePath() + (std::string)"Assets\\shadow-small.png").c_str());
-	if (Shadow == nullptr){
+	Shadow = IMG_LoadTexture(ren, (SDL_GetBasePath() + (std::string)"Assets/shadow-small.png").c_str());
+	if (Shadow == NULL){
 		return false;
 	}
 	//Set small button size
@@ -71,11 +71,7 @@ void MainButton::SetProportionalSize(int width){
 }
 
 bool MainButton::Activate(){
-	DWORD iRes = (DWORD)ShellExecute(NULL, "open", AppPath.c_str(), AppParams.c_str(), NULL, SW_NORMAL);
-	if(iRes < 32)
-		return false;
-	//animState = BUTTON_ANIM_ACTIVE_DOWN;
-	return true;
+	//TODO
 }
 
 void MainButton::Render(SDL_Renderer *ren){
@@ -97,7 +93,7 @@ void MainButton::Render(SDL_Renderer *ren){
 	Mask.y = y;
 	Mask.w = w;
 	Mask.h = h;
-	
+
 	//Draw Shadow
 	SDL_Rect dst;
 	dst.x = S_Size.x + shadowOffset;
@@ -105,7 +101,7 @@ void MainButton::Render(SDL_Renderer *ren){
 	dst.w = S_Size.w + shadowPadding;
 	dst.h = S_Size.h + shadowPadding;
 	SDL_RenderCopy(ren, Shadow, NULL, &dst);
-	
+
 	//Draw Image
 	Button::Render(ren);
 

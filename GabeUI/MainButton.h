@@ -1,8 +1,6 @@
 #ifndef MAINBUTTON_H_
 #define MAINBUTTON_H_
 
-#include <windows.h>
-#include <shellapi.h>
 #include "Button.h"
 
 enum {

@@ -12,8 +12,8 @@ Menu::~Menu(){
 }
 
 bool Menu::Init(SDL_Renderer *ren){
-	Shadow = IMG_LoadTexture(ren, (SDL_GetBasePath() + (std::string)"Assets\\shadow-small.png").c_str());
-	if (Shadow == nullptr){
+	Shadow = IMG_LoadTexture(ren, (SDL_GetBasePath() + (std::string)"Assets/shadow-small.png").c_str());
+	if (Shadow == NULL){
 		return false;
 	}
 	return true;
@@ -21,10 +21,10 @@ bool Menu::Init(SDL_Renderer *ren){
 
 bool Menu::Activate(){
 
-	for(std::vector<MenuItem>::iterator MenuItemsIt = MenuItems.begin(); MenuItemsIt != MenuItems.end(); MenuItemsIt++){	
+	for(std::vector<MenuItem>::iterator MenuItemsIt = MenuItems.begin(); MenuItemsIt != MenuItems.end(); MenuItemsIt++){
 		if(std::distance(MenuItems.begin(), MenuItemsIt) == selected){
 		     return (*MenuItemsIt).Activate();
-		} 
+		}
 	}
 	//nothing selected?
 	return false;
@@ -38,7 +38,7 @@ bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 		w = temp.w;
 	}
 	h += temp.h;
-	if(MenuItems.size() == 0) 
+	if(MenuItems.size() == 0)
 		temp.state = BUTTON_STATE_SELECTED;
 	else
 		temp.state = BUTTON_STATE_UNSELECTED;
@@ -54,7 +54,7 @@ bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 		w = temp.w;
 	}
 	h += temp.h;
-	if(MenuItems.size() == 0) 
+	if(MenuItems.size() == 0)
 		temp.state = BUTTON_STATE_SELECTED;
 	else
 		temp.state = BUTTON_STATE_UNSELECTED;
@@ -90,7 +90,7 @@ void Menu::Render(SDL_Renderer *ren){
 		//dont ever change h, its fine
 
 		(*MenuItemsIt).Render(ren);
-		
+
 		curY += (*MenuItemsIt).h;
 	}
 }

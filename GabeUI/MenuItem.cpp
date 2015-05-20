@@ -34,11 +34,11 @@ bool MenuItem::Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 	if(Type == MENUITEM_TYPE_APPLAUNCH){
 		//We need to first render to a surface as that's what TTF_RenderText returns, then load that surface into a texture
 		SDL_Surface *surf = TTF_RenderText_Blended(font, ItemMessage.c_str(), color);
-		if (surf == nullptr){
+		if (surf == NULL){
 			return false;
 		}
 		Image = SDL_CreateTextureFromSurface(ren, surf);
-		if (Image == nullptr){
+		if (Image == NULL){
 			SDL_FreeSurface(surf);
 			return false;
 		}
@@ -62,11 +62,11 @@ bool MenuItem::Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 	if(Type == MENUITEM_TYPE_SHUTDOWN){
 		//We need to first render to a surface as that's what TTF_RenderText returns, then load that surface into a texture
 		SDL_Surface *surf = TTF_RenderText_Blended(font, ItemMessage.c_str(), color);
-		if (surf == nullptr){
+		if (surf == NULL){
 			return false;
 		}
 		Image = SDL_CreateTextureFromSurface(ren, surf);
-		if (Image == nullptr){
+		if (Image == NULL){
 			SDL_FreeSurface(surf);
 			return false;
 		}
@@ -88,24 +88,18 @@ bool MenuItem::Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 bool MenuItem::Activate(){
 	if(type == MENUITEM_TYPE_SHUTDOWN) {
 		if(action == MENUITEM_SHUTDOWN_SHUTDOWN) {
-			if(InitiateSystemShutdownEx(NULL,NULL,0,TRUE,FALSE,SHTDN_REASON_FLAG_PLANNED) != 0)
-				return false;
-			else
+			//TODO
 				return true;
 		}
 		else if(action == MENUITEM_SHUTDOWN_REBOOT) {
-			if(InitiateSystemShutdownEx(NULL,NULL,0,TRUE,TRUE,SHTDN_REASON_FLAG_PLANNED) != 0)
-				return false;
-			else
+			//TODO
 				return true;
 		}
 		else
 			return false;
 	}
 	else if(type == MENUITEM_TYPE_APPLAUNCH) {
-		DWORD iRes = (DWORD)ShellExecute(NULL, "open", AppPath.c_str(), AppParams.c_str(), NULL, SW_NORMAL);
-		if(iRes < 32)
-			return false;
+		//TODO
 		return true;
 	}
 	//broken type

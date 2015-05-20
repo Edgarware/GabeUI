@@ -2,8 +2,8 @@
 #define BUTTON_H_
 
 #include <string>
-#include <SDL.h>
-#include <SDL_image.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 /********
 Button - Self enclosed button for creating interactable buttons
@@ -28,7 +28,7 @@ enum
 
 class Button{
 
-public: 
+public:
 	SDL_Texture* Image;
 	SDL_Texture* Shadow;
 	SDL_Rect Mask;

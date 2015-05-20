@@ -39,7 +39,7 @@ Button::~Button(){
 bool Button::Init(std::string ImagePath, SDL_Renderer *ren){
 	//Load Texture
 	Image = IMG_LoadTexture(ren, ImagePath.c_str());
-	if (Image == nullptr){
+	if (Image == NULL){
 		return false;
 	}
 	w = getTextureWidth(Image);

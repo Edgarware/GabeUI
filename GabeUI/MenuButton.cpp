@@ -20,8 +20,8 @@ bool MenuButton::Init(std::string ImagePath, SDL_Renderer *ren){
 		return false;
 	if(!popMenu->Init(ren))
 		return false;
-	Shadow = IMG_LoadTexture(ren, (SDL_GetBasePath() + (std::string)"Assets\\shadow-small.png").c_str());
-	if (Shadow == nullptr){
+	Shadow = IMG_LoadTexture(ren, (SDL_GetBasePath() + (std::string)"Assets/shadow-small.png").c_str());
+	if (Shadow == NULL){
 		return false;
 	}
 	ButtonBack.x = x - padding;
@@ -69,7 +69,7 @@ void MenuButton::Render(SDL_Renderer *ren){
 	dst.w = ButtonBack.w + 10;
 	dst.h = ButtonBack.h + 10;
 	SDL_RenderCopy(ren, Shadow, NULL, &dst);
-	
+
 	//Render color
 	if(state == BUTTON_STATE_SELECTED)
 		SDL_SetRenderDrawColor(ren, MaskColor.r, MaskColor.g, MaskColor.b, MaskColor.a);

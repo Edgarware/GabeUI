@@ -2,10 +2,8 @@
 #define MENUITEM_H_
 
 #include "Button.h"
-#include <SDL.h>
-#include <SDL_ttf.h>
-#include <windows.h>
-#include <shellapi.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 enum {
 	MENUITEM_SHUTDOWN_SHUTDOWN=0,

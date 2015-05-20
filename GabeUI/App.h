@@ -4,23 +4,20 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
-#include <windows.h>
-#include <shellapi.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 #include "Button.h"
 #include "MainButton.h"
 #include "MenuButton.h"
-#include "WifiManager.h"
 
 class App{
 
 public:
 	SDL_Window *window;
 	SDL_Renderer *renderer;
-	WifiManager *Wireless;
+
 	TTF_Font *font;
 	SDL_GameController *controller;
 	std::vector<Button*> ButtonList;
@@ -28,7 +25,6 @@ public:
 	MainButton *Plex;
 	MenuButton *Options;
 	MenuButton *Exit;
-	MainButton *DB;
 	SDL_Event e;
 	bool wifiOn;
 	bool quit;
