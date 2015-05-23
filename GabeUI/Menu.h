@@ -28,7 +28,8 @@ public:
 	bool Init(SDL_Renderer *ren);
 	bool Activate();
 	bool LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, int action);
-	bool LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, std::string AppPath, std::string AppParams);
+	bool LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, bool* quitref);
+	bool LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, char* AppPath, char* AppParams);
 	void Render(SDL_Renderer *ren);
 	void Cleanup();
 	void MoveUp();

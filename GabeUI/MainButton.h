@@ -2,6 +2,7 @@
 #define MAINBUTTON_H_
 
 #include "Button.h"
+#include <stdlib.h>
 
 enum {
 	BUTTON_ANIM_INACTIVE = 0,
@@ -15,8 +16,7 @@ enum {
 
 class MainButton :public Button {
 public:
-	std::string AppPath;
-	std::string AppParams;
+	char *application;
 	Uint32 LastTime;
 	int animState;
 	int activeAnim;
@@ -26,12 +26,14 @@ public:
 	SDL_Rect S_Size; //Boundaries for SMALL (unselected, default) button;
 	int shadowOffset;
 	int shadowPadding;
+	pid_t pid;
 
 public:
 	MainButton();
 	bool Init(std::string ImagePath, SDL_Renderer *ren);
 	void SetXY(int X, int Y);
-	void SetProportionalSize(int width);
+	void SetProportionalSizeW(int width);
+	void SetProportionalSizeH(int height);
 	bool Activate();
 	void Render(SDL_Renderer *ren);
 	void Cleanup();

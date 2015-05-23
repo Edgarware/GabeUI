@@ -30,7 +30,7 @@ MenuItem::MenuItem(){
 	midpadding = 5;
 }
 
-bool MenuItem::Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int Type, std::string appPath, std::string appParams){
+bool MenuItem::Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int Type, char* appPath, char* appParams){
 	if(Type == MENUITEM_TYPE_APPLAUNCH){
 		//We need to first render to a surface as that's what TTF_RenderText returns, then load that surface into a texture
 		SDL_Surface *surf = TTF_RenderText_Blended(font, ItemMessage.c_str(), color);
@@ -85,22 +85,57 @@ bool MenuItem::Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 		return false;
 }
 
+bool MenuItem::Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int Type, bool *quit){
+	if(Type == MENUITEM_TYPE_QUIT){
+		//We need to first render to a surface as that's what TTF_RenderText returns, then load that surface into a texture
+		SDL_Surface *surf = TTF_RenderText_Blended(font, ItemMessage.c_str(), color);
+		if (surf == NULL){
+			return false;
+		}
+		Image = SDL_CreateTextureFromSurface(ren, surf);
+		if (Image == NULL){
+			SDL_FreeSurface(surf);
+			return false;
+		}
+		//Clean up the surface
+		SDL_FreeSurface(surf);
+		//set w/h
+		w = getTextWidth(Image) + 2*padding;
+		h = getTextHeight(Image) + midpadding;
+		//set vars
+		type = Type;
+		quitref = quit;
+
+		return true;
+	}
+	else //incorrect type
+		return false;
+}
+
 bool MenuItem::Activate(){
 	if(type == MENUITEM_TYPE_SHUTDOWN) {
 		if(action == MENUITEM_SHUTDOWN_SHUTDOWN) {
-			//TODO
-				return true;
+			system("/sbin/halt");
+            return true;
 		}
 		else if(action == MENUITEM_SHUTDOWN_REBOOT) {
-			//TODO
-				return true;
+			system("/sbin/reboot");
+			return true;
 		}
 		else
 			return false;
 	}
 	else if(type == MENUITEM_TYPE_APPLAUNCH) {
-		//TODO
+		system(AppPath);
 		return true;
+	}
+	else if(type == MENUITEM_TYPE_QUIT){
+	    if(quitref != NULL){
+            *quitref = true;
+            return true;
+	    }
+	    else
+            return false;
 	}
 	//broken type
 	else

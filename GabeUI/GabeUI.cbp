@@ -18,7 +18,7 @@
 			<Target title="Release">
 				<Option output="bin/Release/GabeUI" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
-				<Option type="1" />
+				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
@@ -31,6 +31,24 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Linker>
+			<Add library="SDL2" />
+			<Add library="/usr/local/lib/libSDL2_image.so" />
+			<Add library="/usr/local/lib/libSDL2_ttf.so" />
+		</Linker>
+		<Unit filename="App.cpp" />
+		<Unit filename="App.h" />
+		<Unit filename="Button.cpp" />
+		<Unit filename="Button.h" />
+		<Unit filename="MainButton.cpp" />
+		<Unit filename="MainButton.h" />
+		<Unit filename="Menu.cpp" />
+		<Unit filename="Menu.h" />
+		<Unit filename="MenuButton.cpp" />
+		<Unit filename="MenuButton.h" />
+		<Unit filename="MenuItem.cpp" />
+		<Unit filename="MenuItem.h" />
+		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

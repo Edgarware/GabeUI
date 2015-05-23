@@ -46,7 +46,23 @@ bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 	return true;
 }
 
-bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, std::string AppPath, std::string AppParams){
+bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, bool *quitref){
+	MenuItem temp;
+	if(!temp.Init(ItemMessage, font, color, ren, type, quitref))
+		return false;
+	if(temp.w > w) {
+		w = temp.w;
+	}
+	h += temp.h;
+	if(MenuItems.size() == 0)
+		temp.state = BUTTON_STATE_SELECTED;
+	else
+		temp.state = BUTTON_STATE_UNSELECTED;
+	MenuItems.push_back(temp);
+	return true;
+}
+
+bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, char* AppPath, char* AppParams){
 	MenuItem temp;
 	if(!temp.Init(ItemMessage, font, color, ren, type, AppPath, AppParams))
 		return false;

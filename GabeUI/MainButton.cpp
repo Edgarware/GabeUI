@@ -56,9 +56,23 @@ void MainButton::SetXY(int X, int Y){
 	}
 }
 
-void MainButton::SetProportionalSize(int width){
+void MainButton::SetProportionalSizeW(int width){
 	if (animState == BUTTON_ANIM_INACTIVE){
-		Button::SetProportionalSize(width);
+		Button::SetProportionalSizeW(width);
+		//Set new animation references
+		//Set small button size
+		S_Size.w = w;
+		S_Size.h = h;
+
+		//Calculate large button size
+		B_Size.w = w + 4 * scale;
+		B_Size.h = h + 2 * scale;
+	}
+}
+
+void MainButton::SetProportionalSizeH(int height){
+	if (animState == BUTTON_ANIM_INACTIVE){
+		Button::SetProportionalSizeH(height);
 		//Set new animation references
 		//Set small button size
 		S_Size.w = w;
@@ -71,7 +85,8 @@ void MainButton::SetProportionalSize(int width){
 }
 
 bool MainButton::Activate(){
-	//TODO
+    system(application);
+    return true;
 }
 
 void MainButton::Render(SDL_Renderer *ren){

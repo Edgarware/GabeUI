@@ -10,6 +10,7 @@
 */
 
 //FUNCTIONS.H
+
 void logSDLError(std::ostream &os, const std::string &msg){
 	os << "error: " << msg << " " << SDL_GetError() << std::endl;
 }
@@ -80,7 +81,7 @@ int App::Main(int argc, char** argv){
 		displaySize.h = 576;
 	}
 	if(DEBUG == 0)
-		window = SDL_CreateWindow("GabeUI", displaySize.x, displaySize.y, displaySize.w, displaySize.h, SDL_WINDOW_BORDERLESS);
+		window = SDL_CreateWindow("GabeUI", displaySize.x, displaySize.y, displaySize.w, displaySize.h, SDL_WINDOW_FULLSCREEN_DESKTOP);
 	else
 		window = SDL_CreateWindow("GabeUI", displaySize.x, displaySize.y, displaySize.w, displaySize.h, SDL_WINDOW_INPUT_GRABBED); //we dont support resizable anymore OH WELL
 	if (window == NULL){
@@ -126,20 +127,44 @@ int App::Main(int argc, char** argv){
 	if(!Steam->Init((SDL_GetBasePath() + (std::string)"Assets/steam.jpg"),renderer)) {
 		logSDLError(std::cout, "CreateButton");
 	}
-	Steam->AppPath = "";
-	Steam->AppParams = "";
+	Steam->application = "/usr/bin/returntosteam.sh";
 	Steam->bname = "steam";
 	ButtonList.push_back(Steam);
+	MainButtonList.push_back(Steam);
 
 	Plex = new MainButton;
 	if(!Plex->Init((SDL_GetBasePath() + (std::string)"Assets/plex.png"),renderer)) {
 		logSDLError(std::cout, "CreateButton");
 	}
-	Plex->AppPath = "";
-	Plex->AppParams = "";
+	Plex->application = "/usr/bin/plexhometheater.sh";
 	Plex->bname = "plex";
 	ButtonList.push_back(Plex);
+	MainButtonList.push_back(Plex);
+
+	Kodi = new MainButton;
+	if(!Kodi->Init((SDL_GetBasePath() + (std::string)"Assets/kodi.png"),renderer)) {
+		logSDLError(std::cout, "CreateButton");
+	}
+	Kodi->application = "/usr/bin/plexhometheater.sh";
+	Kodi->bname = "kodi";
+	ButtonList.push_back(Kodi);
+	MainButtonList.push_back(Kodi);
+
 	//MENU BUTTONS
+	Exit = new MenuButton;
+	if(!Exit->Init((SDL_GetBasePath() + (std::string)"Assets/exit.png"),renderer)) {
+		logSDLError(std::cout, "CreateButton");
+	}
+	Exit->bname = "exit";
+	if(!Exit->popMenu->LoadItem("Shutdown", font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
+		logSDLError(std::cout, "CreateMenuItem");
+	if(!Exit->popMenu->LoadItem("Restart", font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
+		logSDLError(std::cout, "CreateMenuItem");
+	if(!Exit->popMenu->LoadItem("Go To Desktop", font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
+		logSDLError(std::cout, "CreateMenuItem");
+	ButtonList.push_back(Exit);
+	BottomButtonList.push_back(Exit);
+
 	Options = new MenuButton;
 	if(!Options->Init((SDL_GetBasePath() + (std::string)"Assets/settings.png"),renderer)) {
 		logSDLError(std::cout, "CreateButton");
@@ -151,19 +176,7 @@ int App::Main(int argc, char** argv){
 	if(!Options->popMenu->LoadItem("Plex Server Settings", font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, "C:\\Program Files (x86)\\Mozilla Firefox\\Firefox.exe","localhost:32400/web"))
 		logSDLError(std::cout, "CreateMenuItem");*/
 	ButtonList.push_back(Options);
-
-	Exit = new MenuButton;
-	if(!Exit->Init((SDL_GetBasePath() + (std::string)"Assets/exit.png"),renderer)) {
-		logSDLError(std::cout, "CreateButton");
-	}
-	Exit->bname = "exit";
-	if(!Exit->popMenu->LoadItem("Shutdown", font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
-		logSDLError(std::cout, "CreateMenuItem");
-	if(!Exit->popMenu->LoadItem("Restart", font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
-		logSDLError(std::cout, "CreateMenuItem");
-	if(!Exit->popMenu->LoadItem("Go To Desktop", font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, "C:\\Windows\\explorer.exe",""))
-		logSDLError(std::cout, "CreateMenuItem");
-	ButtonList.push_back(Exit);
+	BottomButtonList.push_back(Options);
 
 
 	//POSITION BUTTONS
@@ -172,24 +185,78 @@ int App::Main(int argc, char** argv){
 	//Calculate the Size and Position of all buttons
 	SDL_GetWindowSize(window, &wW, &wH);
 	//side padding is 10% from the edges
-	float temp = (float)(wH) * 0.10f; //fun with floats
-	sidePadding = (int)(temp);
+	sidePadding = (int)(wH * 0.10f);
+
+    //menu buttons
+    //Insert in REVERSE order you want them to show up in
+    //Do these first, so we know not to overlap them with MainButtons
+	int bottombuttonsize = BottomButtonList.size();
+	int menuwidth = 0;
+	int menuheight = 0;
+	for(std::vector<MenuButton*>::iterator BottomButtonListIt = BottomButtonList.begin(); BottomButtonListIt != BottomButtonList.end(); BottomButtonListIt++){
+        if(BottomButtonListIt == BottomButtonList.begin()) //first element
+            menuwidth  = wW - sidePadding - (sidePadding/2);
+        else
+            menuwidth  = menuwidth - (*BottomButtonListIt)->ButtonBack.w - 20;
+        (*BottomButtonListIt)->x = menuwidth;
+        (*BottomButtonListIt)->y = wH - sidePadding;
+	}
 
 	//main buttons
-	temp = ((float)(wW)/2) - ((float)(sidePadding)/2) - (float)sidePadding;
+	//NOTE: Elements are put into this backwards (AKA, from right to left)
+	//Insert main buttons in order you want them to show up
+	int mainbuttonsize = MainButtonList.size();
+	int numrow = ((mainbuttonsize - 1) /2.0f);
+
+	SDL_Rect maincanvas;
+	maincanvas.x = sidePadding;
+	maincanvas.y = sidePadding;
+	maincanvas.w = wW - sidePadding*2.0f;
+	maincanvas.h = wH - sidePadding*3.0f;
+	int elementHeight = (maincanvas.h/(numrow+1.0f)) - sidePadding*(numrow/2.0f);
+	int elementWidth = (maincanvas.w/2.0f) - (sidePadding/2.0f);
+	int startX = maincanvas.x;
+	int mainwidth = 0;
+	int mainheight = maincanvas.y;
+	int count = 0;
+	for(std::vector<MainButton*>::iterator MainButtonListIt = MainButtonList.begin(); MainButtonListIt != MainButtonList.end(); MainButtonListIt++){
+        if(MainButtonListIt == MainButtonList.begin()){ //FIRST ELEMENT
+            (*MainButtonListIt)->SetProportionalSizeH(elementHeight); //set width to check if overflow
+            if((*MainButtonListIt)->w > elementWidth){ //TOO BIG, use height to determine width instead
+                (*MainButtonListIt)->SetProportionalSizeW(elementWidth);
+                elementHeight = (*MainButtonListIt)->h;
+            }
+            else{
+                elementWidth = (*MainButtonListIt)->w;
+            }
+            //Determine starting X value
+            startX = maincanvas.x;
+        }
+        else{
+            (*MainButtonListIt)->SetProportionalSizeW(elementWidth); //I trust the width set function more
+        }
+        (*MainButtonListIt)->SetXY(startX+mainwidth,mainheight);
+
+
+        if(count%2 == 0)
+            mainwidth = maincanvas.w - elementWidth;
+        else
+            mainwidth = 0;
+        count++;
+
+        if(count%2 == 0){ //if second element
+            mainheight += elementHeight + sidePadding;
+        }
+
+
+	}
+	/*float temp = ((float)(wW)/2.0f) - ((float)(sidePadding)/2.0f) - (float)sidePadding;
 
 	Steam->SetXY(sidePadding, sidePadding);
-	Steam->SetProportionalSize((int)temp);
+	Steam->SetProportionalSizeW((int)temp);
 
-	Plex->SetXY((wW / 2) + (sidePadding / 2), sidePadding);
-	Plex->SetProportionalSize((int)temp);
-
-	//menu buttons
-	Exit->x = wW - sidePadding - (sidePadding/2);
-	Exit->y = wH - sidePadding;
-
-	Options->x = Exit->x - Options->ButtonBack.w - 20;
-	Options->y = wH - sidePadding;
+	Plex->SetXY((wW / 2.0f) + (sidePadding / 2.0f), sidePadding);
+	Plex->SetProportionalSizeW((int)temp);*/
 
 
 	//DO THE LOOP ----------------------------------

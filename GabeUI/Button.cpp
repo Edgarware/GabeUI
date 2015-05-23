@@ -49,9 +49,14 @@ bool Button::Init(std::string ImagePath, SDL_Renderer *ren){
 }
 
 //Set the height and keep the aspect ratio of the texture
-void Button::SetProportionalSize(int width){
+void Button::SetProportionalSizeW(int width){
 	h = (int)((float)getTextureHeight(Image)/(float)getTextureWidth(Image) * (float)width);
 	w = width;
+}
+
+void Button::SetProportionalSizeH(int height){
+	w = (int)((float)getTextureWidth(Image)/(float)getTextureHeight(Image) * (float)height);
+	h = height;
 }
 
 bool Button::Activate(){

@@ -45,7 +45,8 @@ public:
 	Button();
 	virtual ~Button();
 	virtual bool Init(std::string ImagePath, SDL_Renderer *ren);
-	virtual void SetProportionalSize(int width);
+	virtual void SetProportionalSizeW(int width);
+	virtual void SetProportionalSizeH(int height);
 	virtual bool Activate();
 	virtual void Render(SDL_Renderer *ren);
 	virtual void Cleanup();

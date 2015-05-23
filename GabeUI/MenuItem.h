@@ -2,6 +2,8 @@
 #define MENUITEM_H_
 
 #include "Button.h"
+#include <stdlib.h>
+#include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
@@ -13,7 +15,8 @@ enum {
 enum {
 	MENUITEM_TYPE_GENERIC=0,
 	MENUITEM_TYPE_SHUTDOWN,
-	MENUITEM_TYPE_APPLAUNCH
+	MENUITEM_TYPE_APPLAUNCH,
+	MENUITEM_TYPE_QUIT
 };
 
 class MenuItem: public Button{
@@ -24,13 +27,16 @@ public:
 	int padding;
 	int midpadding;
 	int type;
-	std::string AppPath;
-	std::string AppParams;
+	char* AppPath;
+	char* AppParams;
+	bool *quitref;
+
 
 public:
 	MenuItem();
 	bool Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, int action);
-	bool Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, std::string AppPath, std::string AppParams);
+	bool Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, char* AppPath, char* AppParams);
+	bool Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, bool* quit);
 	bool Activate();
 	void Render(SDL_Renderer *ren);
 };

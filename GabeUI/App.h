@@ -20,9 +20,12 @@ public:
 
 	TTF_Font *font;
 	SDL_GameController *controller;
+	std::vector<MainButton*> MainButtonList;
+	std::vector<MenuButton*> BottomButtonList;
 	std::vector<Button*> ButtonList;
 	MainButton *Steam;
 	MainButton *Plex;
+	MainButton *Kodi;
 	MenuButton *Options;
 	MenuButton *Exit;
 	SDL_Event e;
