@@ -2,6 +2,8 @@
 #define MAINBUTTON_H_
 
 #include "Button.h"
+#include <unistd.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 
 enum {
@@ -12,10 +14,8 @@ enum {
 	BUTTON_ANIM_ACTIVE_UP
 };
 
-//TODO: Outline?
-
-class MainButton :public Button {
-public:
+class MainButton : public Button {
+private:
 	char *application;
 	Uint32 LastTime;
 	int animState;
@@ -26,10 +26,12 @@ public:
 	SDL_Rect S_Size; //Boundaries for SMALL (unselected, default) button;
 	int shadowOffset;
 	int shadowPadding;
-	pid_t pid;
 
 public:
 	MainButton();
+	void setApp(const char *app);
+    void setW(int val);
+    void setH(int val);
 	bool Init(std::string ImagePath, SDL_Renderer *ren);
 	void SetXY(int X, int Y);
 	void SetProportionalSizeW(int width);

@@ -11,6 +11,31 @@ Menu::Menu() {
 Menu::~Menu(){
 }
 
+int Menu::getX(){
+    return x;
+}
+int Menu::getY(){
+    return y;
+}
+int Menu::getW(){
+    return w;
+}
+int Menu::getH(){
+    return h;
+}
+void Menu::setX(int val){
+    x = val;
+}
+void Menu::setY(int val){
+    y = val;
+}
+void Menu::setW(int val){
+    w = val;
+}
+void Menu::setH(int val){
+    h = val;
+}
+
 bool Menu::Init(SDL_Renderer *ren){
 	Shadow = IMG_LoadTexture(ren, (SDL_GetBasePath() + (std::string)"Assets/shadow-small.png").c_str());
 	if (Shadow == NULL){
@@ -34,14 +59,14 @@ bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 	MenuItem temp;
 	if(!temp.Init(ItemMessage, font, color, ren, type, action))
 		return false;
-	if(temp.w > w) {
-		w = temp.w;
+	if(temp.getW() > w) {
+		w = temp.getW();
 	}
-	h += temp.h;
+	h += temp.getH();
 	if(MenuItems.size() == 0)
-		temp.state = BUTTON_STATE_SELECTED;
+		temp.setState(BUTTON_STATE_SELECTED);
 	else
-		temp.state = BUTTON_STATE_UNSELECTED;
+		temp.setState(BUTTON_STATE_UNSELECTED);
 	MenuItems.push_back(temp);
 	return true;
 }
@@ -50,14 +75,14 @@ bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 	MenuItem temp;
 	if(!temp.Init(ItemMessage, font, color, ren, type, quitref))
 		return false;
-	if(temp.w > w) {
-		w = temp.w;
+	if(temp.getW() > w) {
+		w = temp.getW();
 	}
-	h += temp.h;
+	h += temp.getH();
 	if(MenuItems.size() == 0)
-		temp.state = BUTTON_STATE_SELECTED;
+		temp.setState(BUTTON_STATE_SELECTED);
 	else
-		temp.state = BUTTON_STATE_UNSELECTED;
+		temp.setState(BUTTON_STATE_UNSELECTED);
 	MenuItems.push_back(temp);
 	return true;
 }
@@ -66,14 +91,14 @@ bool Menu::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 	MenuItem temp;
 	if(!temp.Init(ItemMessage, font, color, ren, type, AppPath, AppParams))
 		return false;
-	if(temp.w > w) {
-		w = temp.w;
+	if(temp.getW() > w) {
+		w = temp.getW();
 	}
-	h += temp.h;
+	h += temp.getH();
 	if(MenuItems.size() == 0)
-		temp.state = BUTTON_STATE_SELECTED;
+		temp.setState(BUTTON_STATE_SELECTED);
 	else
-		temp.state = BUTTON_STATE_UNSELECTED;
+		temp.setState(BUTTON_STATE_UNSELECTED);
 	MenuItems.push_back(temp);
 	return true;
 }
@@ -89,25 +114,16 @@ void Menu::Render(SDL_Renderer *ren){
 		dst.h = h + 20;
 	SDL_RenderCopy(ren, Shadow, NULL, &dst);
 
-	//Draw background
-	/*Back.x = x;
-	Back.y = y;
-	Back.w = w;
-	Back.h = h;
-	SDL_SetRenderDrawColor(ren, BackColor.r, BackColor.g, BackColor.b, BackColor.a);
-	SDL_RenderFillRect(ren, &Back);	*/
-
 	//Loop through items
 	int curY = 0;
 	for(std::vector<MenuItem>::iterator MenuItemsIt = MenuItems.begin(); MenuItemsIt != MenuItems.end(); MenuItemsIt++){
-		(*MenuItemsIt).x = x;
-		(*MenuItemsIt).y = y + curY;
-		(*MenuItemsIt).w = w;
-		//dont ever change h, its fine
+		(*MenuItemsIt).setX(x);
+		(*MenuItemsIt).setY(y + curY);
+		(*MenuItemsIt).setW(w);
 
 		(*MenuItemsIt).Render(ren);
 
-		curY += (*MenuItemsIt).h;
+		curY += (*MenuItemsIt).getH();
 	}
 }
 
@@ -122,17 +138,17 @@ void Menu::Cleanup(){
 void Menu::MoveUp(){
 	if(selected == 0 || MenuItems.size() == 0) {}
 	else {
-		MenuItems[selected].state = BUTTON_STATE_UNSELECTED;
+		MenuItems[selected].setState(BUTTON_STATE_UNSELECTED);
 		selected--;
-		MenuItems[selected].state = BUTTON_STATE_SELECTED;
+		MenuItems[selected].setState(BUTTON_STATE_SELECTED);
 	}
 }
 
 void Menu::MoveDown(){
 	if(selected == MenuItems.size()-1 || MenuItems.size() == 0) {}
 	else {
-		MenuItems[selected].state = BUTTON_STATE_UNSELECTED;
+		MenuItems[selected].setState(BUTTON_STATE_UNSELECTED);
 		selected++;
-		MenuItems[selected].state = BUTTON_STATE_SELECTED;
+		MenuItems[selected].setState(BUTTON_STATE_SELECTED);
 	}
 }

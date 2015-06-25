@@ -126,8 +126,7 @@ bool MenuItem::Activate(){
 			return false;
 	}
 	else if(type == MENUITEM_TYPE_APPLAUNCH) {
-		system(AppPath);
-		return true;
+		//TODO
 	}
 	else if(type == MENUITEM_TYPE_QUIT){
 	    if(quitref != NULL){

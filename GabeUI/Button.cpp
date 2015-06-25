@@ -17,7 +17,6 @@ Button::Button(){
 	y=0;
 	w=0;
 	h=0;
-	bname = "";
 	Image = NULL;
 	Shadow = NULL;
 	MaskColor.r = 0x00;
@@ -34,6 +33,40 @@ Button::Button(){
 
 Button::~Button(){
 
+}
+
+int Button::getX(){
+    return x;
+}
+int Button::getY(){
+    return y;
+}
+int Button::getW(){
+    return w;
+}
+int Button::getH(){
+    return h;
+}
+int Button::getState(){
+    return state;
+}
+int Button::getType(){
+    return btype;
+}
+void Button::setX(int val){
+    x = val;
+}
+void Button::setY(int val){
+    y = val;
+}
+void Button::setW(int val){
+    w = val;
+}
+void Button::setH(int val){
+    h = val;
+}
+void Button::setState(int val){
+    state = val;
 }
 
 bool Button::Init(std::string ImagePath, SDL_Renderer *ren){
@@ -76,4 +109,8 @@ void Button::Render(SDL_Renderer *ren){
 void Button::Cleanup(){
 	SDL_DestroyTexture(Image);
 	Image = NULL;
+	if(Shadow != NULL){
+		SDL_DestroyTexture(Shadow);
+        Shadow = NULL;
+	}
 }

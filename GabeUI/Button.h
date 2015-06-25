@@ -28,7 +28,7 @@ enum
 
 class Button{
 
-public:
+protected:
 	SDL_Texture* Image;
 	SDL_Texture* Shadow;
 	SDL_Rect Mask;
@@ -39,11 +39,24 @@ public:
 	int w;
 	int h;
 	int btype;
-	std::string bname;
+	//std::string bname;
 
 public:
 	Button();
 	virtual ~Button();
+
+	virtual int getX();
+	virtual int getY();
+	virtual int getW();
+	virtual int getH();
+	virtual int getState();
+	virtual int getType();
+	virtual void setX(int val);
+	virtual void setY(int val);
+	virtual void setW(int val);
+	virtual void setH(int val);
+	virtual void setState(int val);
+
 	virtual bool Init(std::string ImagePath, SDL_Renderer *ren);
 	virtual void SetProportionalSizeW(int width);
 	virtual void SetProportionalSizeH(int height);

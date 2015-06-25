@@ -9,10 +9,9 @@
 
 
 #include "MenuItem.h"
-//I'm pretty happy with this finally
 
 class Menu {
-public:
+private:
 	//yo dog, i heard you like objects, so I made an object that contains an object that holds a list of objects
 	std::vector<MenuItem> MenuItems;
 	SDL_Texture *Shadow;
@@ -25,6 +24,14 @@ public:
 public:
 	Menu();
 	~Menu();
+	int getX();
+	int getY();
+	int getW();
+	int getH();
+	void setX(int val);
+	void setY(int val);
+	void setW(int val);
+	void setH(int val);
 	bool Init(SDL_Renderer *ren);
 	bool Activate();
 	bool LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, int action);

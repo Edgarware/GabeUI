@@ -15,6 +15,24 @@ MenuButton::MenuButton() {
 	popMenu = new Menu;
 }
 
+int MenuButton::getX(){
+    return ButtonBack.x;
+}
+int MenuButton::getY(){
+    return ButtonBack.y;
+}
+int MenuButton::getW(){
+    return ButtonBack.w;
+}
+int MenuButton::getH(){
+    return ButtonBack.h;
+}
+//W and H should only be set by setProportional
+void MenuButton::setW(int val){
+}
+void MenuButton::setH(int val){
+}
+
 bool MenuButton::Init(std::string ImagePath, SDL_Renderer *ren){
 	if(!Button::Init(ImagePath, ren))
 		return false;
@@ -30,6 +48,17 @@ bool MenuButton::Init(std::string ImagePath, SDL_Renderer *ren){
 	ButtonBack.h = h + 2*padding;
 	return true;
 }
+
+bool MenuButton::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, int action){
+    return popMenu->LoadItem(ItemMessage, font, color, ren, type, action);
+}
+bool MenuButton::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, bool* quitref){
+    return popMenu->LoadItem(ItemMessage, font, color, ren, type, quitref);
+}
+bool MenuButton::LoadItem(const std::string &ItemMessage, TTF_Font *font, SDL_Color color, SDL_Renderer *ren, int type, const char* AppPath, const char* AppParams){
+    return popMenu->LoadItem(ItemMessage, font, color, ren, type, (char*)AppPath, (char*)AppParams);
+}
+
 
 //I assume this works...?
 void MenuButton::SetProportionalSize(int width){
@@ -80,8 +109,8 @@ void MenuButton::Render(SDL_Renderer *ren){
 
 	//render menu
 	if(menustate == BUTTON_MENU_OPEN){
-		popMenu->x = ButtonBack.x - popMenu->w + ButtonBack.w;
-		popMenu->y = ButtonBack.y - popMenu->h;
+		popMenu->setX(getX() - popMenu->getW() + ButtonBack.w);
+		popMenu->setY(getY() - popMenu->getH());
 		popMenu->Render(ren);
 	}
 }
@@ -90,6 +119,10 @@ void MenuButton::Cleanup() {
 	popMenu->Cleanup();
 	//SDL_free(popMenu);
 	Button::Cleanup();
-	SDL_DestroyTexture(Shadow);
-	Shadow = NULL;
+}
+void MenuButton::MoveUp(){
+    popMenu->MoveUp();
+}
+void MenuButton::MoveDown(){
+    popMenu->MoveDown();
 }

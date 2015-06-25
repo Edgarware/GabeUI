@@ -23,6 +23,17 @@ MainButton::MainButton(){
 	B_Size.h = 0;
 }
 
+void MainButton::setApp(const char *app){
+    application = strdup(app);
+}
+
+//W and H should only be set by setProportional
+void MainButton::setW(int val){
+}
+
+void MainButton::setH(int val){
+}
+
 bool MainButton::Init(std::string ImagePath, SDL_Renderer *ren){
 	//Load Texture
 	Button::Init(ImagePath, ren);
@@ -85,8 +96,23 @@ void MainButton::SetProportionalSizeH(int height){
 }
 
 bool MainButton::Activate(){
-    system(application);
-    return true;
+    pid_t pid = fork();
+    int status;
+    if(pid == 0){ //baby cakes
+        setpgid(0, 0);
+        execlp(application, application, NULL);
+        return false; //BAD THINGS HAPPENED
+    }
+    else if(pid > 0){ //momma bird
+        setpgid(pid, pid);
+        waitpid(-pid,&status,0);
+        return true;
+    }
+    else{ //ERROR
+        return false;
+    }
+
+
 }
 
 void MainButton::Render(SDL_Renderer *ren){
@@ -128,8 +154,6 @@ void MainButton::Render(SDL_Renderer *ren){
 
 void MainButton::Cleanup(){
 	Button::Cleanup();
-	SDL_DestroyTexture(Shadow);
-	Shadow = NULL;
 }
 
 void MainButton::Animate() {
