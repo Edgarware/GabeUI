@@ -30,11 +30,14 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-lSDL2" />
+			<Add option="-lSDL2_image" />
+			<Add option="-lSDL2_ttf" />
 		</Compiler>
 		<Linker>
-			<Add library="SDL2" />
-			<Add library="/usr/local/lib/libSDL2_image.so" />
-			<Add library="/usr/local/lib/libSDL2_ttf.so" />
+			<Add option="-lSDL2" />
+			<Add option="-lSDL2_image" />
+			<Add option="-lSDL2_ttf" />
 		</Linker>
 		<Unit filename="App.cpp" />
 		<Unit filename="App.h" />
