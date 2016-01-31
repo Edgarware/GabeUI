@@ -115,11 +115,11 @@ bool MenuItem::Init(const std::string &ItemMessage, TTF_Font *font, SDL_Color co
 bool MenuItem::Activate(){
 	if(type == MENUITEM_TYPE_SHUTDOWN) {
 		if(action == MENUITEM_SHUTDOWN_SHUTDOWN) {
-			system("/sbin/halt");
+			system("systemctl halt -i");
             return true;
 		}
 		else if(action == MENUITEM_SHUTDOWN_REBOOT) {
-			system("/sbin/reboot");
+			system("systemctl reboot -i");
 			return true;
 		}
 		else
