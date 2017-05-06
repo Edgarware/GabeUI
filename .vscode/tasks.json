@@ -6,9 +6,9 @@
         "command": "???"
     },
     "linux":{
-      "command": "g++"  
+      "command": "make"  
     },
     "isShellCommand": true,
-    "args": ["src/main.cpp"],
+    "args": [],
     "showOutput": "always"
 }

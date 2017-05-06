@@ -136,8 +136,9 @@ int App::Main(int argc, char** argv){
 	}
 	inputfile.close();
 
-    if(BottomButtonList.size() <= 0 || MainButtonList.size() <= 1) //I need at least 2 main buttons and one menu button
+    if(BottomButtonList.size() <= 0 || MainButtonList.size() <= 1){ //I need at least 2 main buttons and one menu button
         return 6;
+    }
 
 	//POSITION BUTTONS
 	int wW, wH;
@@ -553,7 +554,7 @@ bool App::configParse(std::ifstream *config){
                     }
                 }
                 else if(lowerTemp == "menuitem"){ //Add item to menulist
-                    if(tempItem.name.empty() || tempItem.type == 0 || tempItem.type == NULL || (tempItem.type == 4 && tempItem.app.empty())){
+                    if(tempItem.name.empty() || tempItem.type == 0 || (tempItem.type == 4 && tempItem.app.empty())){
                         logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete menuitem");
                         return false;
                     }
@@ -561,7 +562,7 @@ bool App::configParse(std::ifstream *config){
                         tempMenu.items.push_back(tempItem);
                         tempItem.name.erase(tempItem.name.begin(), tempItem.name.end());
                         tempItem.app.erase(tempItem.app.begin(), tempItem.app.end());
-                        tempItem.type = NULL;
+                        tempItem.type = 0;
                     }
                 }
                 else if(lowerTemp == "mainbutton" || lowerTemp == "menubutton"){ //check if complete, then add to list
@@ -630,7 +631,7 @@ bool App::configParse(std::ifstream *config){
         }
     }
     else if(state == PARSE_STATE_ITEM){
-        if(tempItem.name.empty() || tempItem.type == 0 || tempItem.type == NULL || (tempItem.type == 4 && tempItem.app.empty())){
+        if(tempItem.name.empty() || tempItem.type == 0 || (tempItem.type == 4 && tempItem.app.empty())){
             logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete menuitem");
             return false;
         }
