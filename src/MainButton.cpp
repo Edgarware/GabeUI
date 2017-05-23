@@ -1,5 +1,43 @@
 #include "MainButton.h"
 
+#ifdef _WIN32
+bool OSLaunch(const char* application){
+	/*STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	ZeroMemory(&pi, sizeof(pi));
+
+	//TODO: Deal with windows's weird char types
+
+	if(!CreateProcess(NULL, const_cast<LPTSTR>(application), NULL, NULL, false, 0, NULL, NULL, &si, &pi))
+		return false;
+
+	WaitForSingleObject(pi.hProcess, INFINITE);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);*/
+    return true;
+}
+#elif __linux__
+bool OSLaunch(const char* application){
+    pid_t pid = fork();
+    int status;
+    if(pid == 0){ //baby cakes
+        setpgid(0, 0);
+        execlp(application, application, NULL);
+        return false; //BAD THINGS HAPPENED
+    }
+    else if(pid > 0){ //momma bird
+        setpgid(pid, pid);
+        waitpid(-pid,&status,0);
+        return true;
+    }
+    else{ //ERROR
+        return false;
+    }
+    return false;
+#endif
+
 MainButton::MainButton(){
 	btype = BUTTON_TYPE_MAIN;
 	LastTime = 0;
@@ -96,23 +134,7 @@ void MainButton::SetProportionalSizeH(int height){
 }
 
 bool MainButton::Activate(){
-    pid_t pid = fork();
-    int status;
-    if(pid == 0){ //baby cakes
-        setpgid(0, 0);
-        execlp(application, application, NULL);
-        return false; //BAD THINGS HAPPENED
-    }
-    else if(pid > 0){ //momma bird
-        setpgid(pid, pid);
-        waitpid(-pid,&status,0);
-        return true;
-    }
-    else{ //ERROR
-        return false;
-    }
-
-
+	return OSLaunch(application);
 }
 
 void MainButton::Render(SDL_Renderer *ren){

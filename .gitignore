@@ -6,6 +6,8 @@
 *.user
 *.sln.docstates
 *.o
+*.exe
+*.dll
 gabeui
 
 # Build results

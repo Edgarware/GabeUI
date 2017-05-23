@@ -1,5 +1,4 @@
-#ifndef MENUBUTTON_H_
-#define MENUBUTTON_H_
+#pragma once
 
 #include "Button.h"
 #include "Menu.h"
@@ -37,5 +36,3 @@ public:
 	void MoveUp();
 	void MoveDown();
 };
-
-#endif

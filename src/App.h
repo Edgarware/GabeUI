@@ -1,5 +1,4 @@
-#ifndef APP_H_
-#define APP_H_
+#pragma once
 
 #include <string>
 #include <sstream>
@@ -7,9 +6,6 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 
 #include "Button.h"
 #include "MainButton.h"
@@ -30,23 +26,14 @@ enum{
     PARSE_MENUITEM_APPLAUNCH
 };
 
-struct MainButtonElements{
+struct ButtonElement{
+	char type;
     std::string image;
     std::string app;
     std::string params;
-};
-
-struct MenuItemElements{
     std::string name;
-    char type;
-    std::string app;
-    std::string params;
-
-};
-
-struct MenuButtonElements{
-    std::string image;
-    std::vector<MenuItemElements> items;
+    char itemtype;
+	std::vector<ButtonElement> items;
 };
 
 class App{
@@ -75,5 +62,3 @@ public:
 	void goDeselect();
 	void scanForController();
 };
-
-#endif

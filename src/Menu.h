@@ -1,12 +1,7 @@
-#ifndef MENU_H_
-#define MENU_H_
+#pragma once
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 #include <vector>
 #include <string>
-
 
 #include "MenuItem.h"
 
@@ -43,5 +38,3 @@ public:
 	void MoveDown();
 
 };
-
-#endif

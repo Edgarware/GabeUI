@@ -1,10 +1,6 @@
-#ifndef MAINBUTTON_H_
-#define MAINBUTTON_H_
+#pragma once
 
 #include "Button.h"
-#include <unistd.h>
-#include <sys/wait.h>
-#include <stdlib.h>
 
 enum {
 	BUTTON_ANIM_INACTIVE = 0,
@@ -17,7 +13,7 @@ enum {
 class MainButton : public Button {
 private:
 	char *application;
-	Uint32 LastTime;
+	uint32_t LastTime;
 	int animState;
 	int activeAnim;
 	int TimeToWait; //number of (milliseconds??) to wait before running next frame
@@ -43,5 +39,3 @@ public:
 private:
 	void Animate();
 };
-
-#endif

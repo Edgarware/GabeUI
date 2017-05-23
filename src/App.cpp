@@ -1,4 +1,5 @@
 #include "App.h"
+#include "jsmn/jsmn.h"
 
 #define JOY_BUFFER 10000
 #define JOY_TIME 200
@@ -15,23 +16,6 @@ void logSDLError(std::ostream &os, const std::string &msg){
 
 void logSDLMessage(std::ostream &os, const std::string &msg){
 	os << msg << std::endl;
-}
-
-void split(const std::string& str, const std::string& delim, std::vector<std::string>& parts) {
-    size_t start, end = 0;
-    while (end < str.size()) {
-        start = end;
-        while (start < str.size() && (delim.find(str[start]) != std::string::npos)) {
-            start++;  // skip initial whitespace
-        }
-        end = start;
-        while (end < str.size() && (delim.find(str[end]) == std::string::npos)) {
-            end++; // skip to end of word
-        }
-        if (end-start != 0) {  // just ignore zero-length strings.
-            parts.push_back(std::string(str, start, end-start));
-        }
-    }
 }
 
 //CLEANUP.H
@@ -130,13 +114,14 @@ int App::Main(int argc, char** argv){
 
 	//Init Buttons
 	std::ifstream inputfile;
-	inputfile.open((SDL_GetBasePath() + (std::string)"buttons.cfg").c_str(), std::ifstream::in);
+	inputfile.open((SDL_GetBasePath() + (std::string)"buttons.json").c_str(), std::ifstream::in);
 	if(!configParse(&inputfile)){
 	    return 5;
 	}
 	inputfile.close();
 
     if(BottomButtonList.size() <= 0 || MainButtonList.size() <= 1){ //I need at least 2 main buttons and one menu button
+        logSDLMessage(std::cout, "not enough buttons");
         return 6;
     }
 
@@ -377,331 +362,296 @@ int App::Main(int argc, char** argv){
 }
 //DATA PARSING ---------------------------------------
 bool App::configParse(std::ifstream *config){
-    std::vector<std::string> tokens;
-    std::string delim = " \t\"\'}{=";
-    std::string tempLine;
+    std::stringstream buffer;
+    jsmn_parser parser;
+    jsmntok_t parsed[256];
+    int len;
 
     if(!config->is_open()){
-        logSDLMessage(std::cout, "buttons.cfg ERROR, file unopenable");
+        logSDLMessage(std::cout, "buttons.json ERROR, file unopenable");
         return false;
     }
-    while(getline(*config,tempLine)){
-        split(tempLine, delim, tokens);
+
+    buffer << config->rdbuf();
+    std::string output = buffer.str();
+
+	ButtonElement nullElement; //empty struct to clear others
+    ButtonElement tempElement;
+    ButtonElement tempElement2;
+
+    jsmn_init(&parser);
+
+    len = jsmn_parse(&parser, output.c_str(), strlen(output.c_str()), parsed, sizeof(parsed)/sizeof(parsed[0]));
+    if(len < 0){
+        logSDLMessage(std::cout, "buttons.json ERROR, parse error");
+        return false;
     }
 
-    MenuButtonElements tempMenu;
-    MenuItemElements tempItem;
-    MainButtonElements tempMain;
-    char state = PARSE_STATE_NULL;
-    for(std::vector<std::string>::iterator tokensIt = tokens.begin(); tokensIt != tokens.end(); tokensIt++) {
-        std::string lowerTemp = (*tokensIt);
-        std::transform(lowerTemp.begin(), lowerTemp.end(), lowerTemp.begin(), ::tolower);
-		switch(state){
-		    case PARSE_STATE_NULL:
-                if(lowerTemp == "mainbutton")
-                    state = PARSE_STATE_MAIN;
-                else if(lowerTemp == "menubutton")
-                    state = PARSE_STATE_MENU;
-                else{ //Things broke
-                    logSDLMessage(std::cout, "buttons.cfg ERROR");
-                    return false;
-                }
-                break;
-            case PARSE_STATE_MAIN:
-                if(lowerTemp == "icon" || lowerTemp == "image"){
-                    if(tokensIt + 1 !=tokens.end()){
-                        tempMain.image = *(tokensIt + 1);
-                        tokensIt++;
-                    }
-                    else{
-                        logSDLMessage(std::cout, "buttons.cfg ERROR");
-                        return false;
-                    }
-                }
-                else if(lowerTemp == "app" || lowerTemp == "application"){
-                    if(tokensIt + 1 !=tokens.end()){
-                        tempMain.app = *(tokensIt + 1);
-                        tokensIt++;
-                    }
-                    else{
-                        logSDLMessage(std::cout, "buttons.cfg ERROR");
-                        return false;
-                    }
-                }
-                else if(lowerTemp == "mainbutton" || lowerTemp == "menubutton"){ //check if complete, then add to list
-                    if(tempMain.app.empty() || tempMain.image.empty()){
-                        logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete mainbutton");
-                        return false;
-                    }
-                    else{
-                        MainButton *Temp = new MainButton;
-                        if(!Temp->Init((SDL_GetBasePath() + tempMain.image),renderer)) {
-                            logSDLMessage(std::cout, "buttons.cfg ERROR, mainbutton could not be loaded");
-                            return false;
-                        }
-                        Temp->setApp(tempMain.app.c_str());
-                        MainButtonList.push_back(Temp);
-                        tempMain.app.erase(tempMain.app.begin(), tempMain.app.end());
-                        tempMain.image.erase(tempMain.image.begin(), tempMain.image.end());
-                        if(lowerTemp == "menubutton")
-                            state = PARSE_STATE_MENU;
-                    }
-                }
-                else{ //Things broke
-                    logSDLMessage(std::cout, "buttons.cfg ERROR, unexpected element " + (*tokensIt));
-                    return false;
-                }
-                break;
-            case PARSE_STATE_MENU:
-                if(lowerTemp == "icon" || lowerTemp == "image"){
-                    if(tokensIt + 1 !=tokens.end()){
-                        tempMenu.image = *(tokensIt + 1);
-                        tokensIt++;
-                    }
-                    else{
-                        logSDLMessage(std::cout, "buttons.cfg ERROR");
-                        return false;
-                    }
-                }
-                else if(lowerTemp == "menuitem"){
-                    state = PARSE_STATE_ITEM;
-                }
-                else if(lowerTemp == "mainbutton" || lowerTemp == "menubutton"){ //check if complete, then add to list
-                    if(tempMenu.image.empty() || tempMenu.items.size() <= 0){
-                        logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete mainbutton");
-                        return false;
-                    }
-                    else{
-                        MenuButton *Temp = new MenuButton;
-                        if(!Temp->Init((SDL_GetBasePath() + tempMenu.image),renderer)) {
-                            logSDLMessage(std::cout, "buttons.cfg ERROR, menubutton could not be loaded");
-                            return false;
-                        }
-                        for(std::vector<MenuItemElements>::iterator itemsIt = tempMenu.items.begin(); itemsIt != tempMenu.items.end(); itemsIt++) { //PARSE_STATE_ITEM checks for completeness, so no need to check here
-                            if((*itemsIt).type == PARSE_MENUITEM_APPLAUNCH){
-                                if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, (*itemsIt).app.c_str(),""))
-                                    return false;
-                            }
-                            else if((*itemsIt).type == PARSE_MENUITEM_QUIT){
-                                if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
-                                    return false;
-                            }
-                            else if((*itemsIt).type == PARSE_MENUITEM_REBOOT){
-                                if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
-                                    return false;
-                            }
-                            else if((*itemsIt).type == PARSE_MENUITEM_SHUTDOWN){
-                                if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
-                                    return false;
-                            }
-                        }
-                        BottomButtonList.push_back(Temp);
+    std::string tmp;
+    char obj = PARSE_STATE_NULL;
+    //token 0 is the top object, ignore it
+    for(int i = 1; i < len; i++){
+        if(parsed[i].type == JSMN_OBJECT){
+            //Determine the object name
+            tmp = output.substr(parsed[i-1].start, parsed[i-1].end - parsed[i-1].start);
+            std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
 
-                        tempMenu.image.erase(tempMenu.image.begin(), tempMenu.image.end());
-                        tempMenu.items.clear();
+            //Close previous 
+            if(tmp.compare("mainbutton") == 0){
+                obj = PARSE_STATE_MAIN;
+				printf("STARING MAIN\n");
+            } else if(tmp.compare("menubutton") == 0){
+                obj = PARSE_STATE_MENU;
+				printf("STARING MENU\n");
+            } else if(tmp.compare("menuitem") == 0){
+                obj = PARSE_STATE_ITEM;
+				printf("STARING ITEM\n");
+            }
+        }
+        else if(parsed[i].type == JSMN_STRING){
+            //Determine string
+            tmp = output.substr(parsed[i].start, parsed[i].end - parsed[i].start);
+            std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+            if(i < len-1){
+                if(tmp.compare("image") == 0 || tmp.compare("icon") == 0){
+                    tmp = output.substr(parsed[i+1].start, parsed[i+1].end - parsed[i+1].start);
+                    tempElement.image = tmp;
+                    i++;
+                } else if(tmp.compare("type") == 0) {
+                    tmp = output.substr(parsed[i+1].start, parsed[i+1].end - parsed[i+1].start);
+                    //Parse type
+					if(tmp.compare("shutdown") == 0)
+						tempElement.type = PARSE_MENUITEM_SHUTDOWN;
+					else if(tmp.compare("restart") == 0 || tmp.compare("reboot") == 0)
+						tempElement.type = PARSE_MENUITEM_REBOOT;
+					else if(tmp.compare("quit") == 0)
+						tempElement.type = PARSE_MENUITEM_QUIT;
+					else if(tmp.compare("app") == 0)
+						tempElement.type = PARSE_MENUITEM_APPLAUNCH;
+					else
+						printf("Parse Error\n");
 
-                        if(lowerTemp == "mainbutton")
-                            state = PARSE_STATE_MAIN;
-                    }
-                }
-                else{ //Things broke
-                    logSDLMessage(std::cout, "buttons.cfg ERROR, unexpected element " + (*tokensIt));
-                    return false;
-                }
-                break;
-            case PARSE_STATE_ITEM:
-                if(lowerTemp == "name" || lowerTemp == "text"){
-                    if(tokensIt + 1 != tokens.end()){
-                        tempItem.name = *(tokensIt + 1);
-                        tokensIt++;
-                    }
-                    else{
-                        logSDLMessage(std::cout, "buttons.cfg ERROR");
-                        return false;
-                    }
-                }
-                else if(lowerTemp == "app" || lowerTemp == "application"){
-                    if(tokensIt + 1 !=tokens.end()){
-                        tempItem.app = *(tokensIt + 1);
-                        tokensIt++;
-                    }
-                    else{
-                        logSDLMessage(std::cout, "buttons.cfg ERROR");
-                        return false;
-                    }
-                }
-                else if(lowerTemp == "type"){
-                    if(tokensIt + 1 !=tokens.end()){
-                        lowerTemp = *(tokensIt + 1);
-                        std::transform(lowerTemp.begin(), lowerTemp.end(), lowerTemp.begin(), ::tolower);
-                        if (lowerTemp == "shutdown")
-                            tempItem.type = PARSE_MENUITEM_SHUTDOWN;
-                        else if (lowerTemp == "restart" || lowerTemp == "reboot")
-                            tempItem.type = PARSE_MENUITEM_REBOOT;
-                        else if (lowerTemp == "quit")
-                            tempItem.type = PARSE_MENUITEM_QUIT;
-                        else if (lowerTemp == "app" || lowerTemp == "applaunch")
-                            tempItem.type = PARSE_MENUITEM_APPLAUNCH;
-                        else{
-                            logSDLMessage(std::cout, "buttons.cfg ERROR, unknown type " + *(tokensIt+1));
-                            return false;
-                        }
-                        tokensIt++;
-                    }
-                    else{
-                        logSDLMessage(std::cout, "buttons.cfg ERROR");
-                        return false;
-                    }
-                }
-                else if(lowerTemp == "menuitem"){ //Add item to menulist
-                    if(tempItem.name.empty() || tempItem.type == 0 || (tempItem.type == 4 && tempItem.app.empty())){
-                        logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete menuitem");
-                        return false;
-                    }
-                    else{
-                        tempMenu.items.push_back(tempItem);
-                        tempItem.name.erase(tempItem.name.begin(), tempItem.name.end());
-                        tempItem.app.erase(tempItem.app.begin(), tempItem.app.end());
-                        tempItem.type = 0;
-                    }
-                }
-                else if(lowerTemp == "mainbutton" || lowerTemp == "menubutton"){ //check if complete, then add to list
-                    if(tempMenu.image.empty() || tempMenu.items.size() <= 0){
-                        logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete mainbutton");
-                        return false;
-                    }
-                    else{
-                        MenuButton *Temp = new MenuButton;
-                        if(!Temp->Init((SDL_GetBasePath() + tempMenu.image),renderer)) {
-                            logSDLMessage(std::cout, "buttons.cfg ERROR, menubutton could not be loaded");
-                            return false;
-                        }
-                        for(std::vector<MenuItemElements>::iterator itemsIt = tempMenu.items.begin(); itemsIt != tempMenu.items.end(); itemsIt++) { //PARSE_STATE_ITEM checks for completeness, so no need to check here
-                            if((*itemsIt).type == PARSE_MENUITEM_APPLAUNCH){
-                                if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, (*itemsIt).app.c_str(),""))
-                                    return false;
-                            }
-                            else if((*itemsIt).type == PARSE_MENUITEM_QUIT){
-                                if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
-                                    return false;
-                            }
-                            else if((*itemsIt).type == PARSE_MENUITEM_REBOOT){
-                                if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
-                                    return false;
-                            }
-                            else if((*itemsIt).type == PARSE_MENUITEM_SHUTDOWN){
-                                if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
-                                    return false;
-                            }
-                        }
-                        BottomButtonList.push_back(Temp);
+                    i++;
+                } else if(tmp.compare("name") == 0 || tmp.compare("string") == 0) {
+                    tmp = output.substr(parsed[i+1].start, parsed[i+1].end - parsed[i+1].start);
+                    tempElement.name = tmp;
+                    i++;
+                } else if(tmp.compare("command") == 0 || tmp.compare("application") == 0) {
+                    tmp = output.substr(parsed[i+1].start, parsed[i+1].end - parsed[i+1].start);
+                    tempElement.app = tmp;
+                    i++;
+                } else if(tmp.compare("args") == 0 || tmp.compare("arguments") == 0) {
+                    tmp = output.substr(parsed[i+1].start, parsed[i+1].end - parsed[i+1].start);
+                    tempElement.params = tmp;
+                    i++;
+                } else if(tmp.compare("mainbutton") == 0 || tmp.compare("menubutton") == 0) {
+                   	//Close Objects
+                   	if(obj == PARSE_STATE_MAIN){ //Add mainbutton to list
+						if(tempElement.app.empty() || tempElement.image.empty()){
+							logSDLMessage(std::cout, "buttons.json ERROR, incomplete mainbutton");
+							return false;
+						}
+						else{
+							MainButton *Temp = new MainButton;
+							if(!Temp->Init((SDL_GetBasePath() + tempElement.image), renderer)) {
+								logSDLMessage(std::cout, "buttons.json ERROR, mainbutton could not be loaded");
+								return false;
+							}
+							Temp->setApp(tempElement.app.c_str());
+							MainButtonList.push_back(Temp);
+							tempElement = nullElement;
+						}
+                   	} else if(obj == PARSE_STATE_MENU){ //Add menubutton to list
+					    if(tempElement.image.empty() || tempElement.items.size() <= 0){
+							logSDLMessage(std::cout, "buttons.json ERROR, incomplete menubutton");
+							return false;
+						} else {
+							MenuButton *Temp = new MenuButton;
+							if(!Temp->Init((SDL_GetBasePath() + tempElement.image),renderer)) {
+								logSDLMessage(std::cout, "buttons.json ERROR, menubutton could not be loaded");
+								return false;
+							}
+							for(std::vector<ButtonElement>::iterator itemsIt = tempElement.items.begin(); itemsIt != tempElement.items.end(); itemsIt++) { //PARSE_STATE_ITEM checks for completeness, so no need to check here
+								if((*itemsIt).type == PARSE_MENUITEM_APPLAUNCH){
+									if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, (*itemsIt).app.c_str(),""))
+										return false;
+								}
+								else if((*itemsIt).type == PARSE_MENUITEM_QUIT){
+									if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
+										return false;
+								}
+								else if((*itemsIt).type == PARSE_MENUITEM_REBOOT){
+									if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
+										return false;
+								}
+								else if((*itemsIt).type == PARSE_MENUITEM_SHUTDOWN){
+									if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
+										return false;
+								}
+							}
+							BottomButtonList.push_back(Temp);
+							tempElement = nullElement;
+						}
+                   	} else if(obj == PARSE_STATE_ITEM){
+					   	//Add current item to menubutton list
+						if(tempElement.name.empty() || tempElement.type == 0 || (tempElement.type == 4 && tempElement.app.empty())){
+							logSDLMessage(std::cout, "buttons.json ERROR, incomplete menuitem");
+							return false;
+						}
+						else{
+							tempElement2.items.push_back(tempElement);
+						}
 
-                        tempMenu.image.erase(tempMenu.image.begin(), tempMenu.image.end());
-                        tempMenu.items.clear();
-
-                        if(lowerTemp == "mainbutton")
-                            state = PARSE_STATE_MAIN;
-                    }
+					   	//Add menubutton to list
+						tempElement = tempElement2;
+						tempElement2 = nullElement;
+						if(tempElement.image.empty() || tempElement.items.size() <= 0){
+							logSDLMessage(std::cout, "buttons.json ERROR, incomplete menubutton");
+							return false;
+						} else {
+							MenuButton *Temp = new MenuButton;
+							if(!Temp->Init((SDL_GetBasePath() + tempElement.image),renderer)) {
+								logSDLMessage(std::cout, "buttons.json ERROR, menubutton could not be loaded");
+								return false;
+							}
+							for(std::vector<ButtonElement>::iterator itemsIt = tempElement.items.begin(); itemsIt != tempElement.items.end(); itemsIt++) { //PARSE_STATE_ITEM checks for completeness, so no need to check here
+								if((*itemsIt).type == PARSE_MENUITEM_APPLAUNCH){
+									if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, (*itemsIt).app.c_str(),""))
+										return false;
+								}
+								else if((*itemsIt).type == PARSE_MENUITEM_QUIT){
+									if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
+										return false;
+								}
+								else if((*itemsIt).type == PARSE_MENUITEM_REBOOT){
+									if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
+										return false;
+								}
+								else if((*itemsIt).type == PARSE_MENUITEM_SHUTDOWN){
+									if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
+										return false;
+								}
+							}
+							BottomButtonList.push_back(Temp);
+							tempElement = nullElement;
+						}
+                   	} else {
+                       	printf("Parse issue\n");
+                   	}
+                } else if(tmp.compare("menuitem") == 0) {
+					if(obj == PARSE_STATE_MENU){ //If was handling the menu button store it in the second buffer
+						tempElement2 = tempElement;
+						tempElement = nullElement;
+					} else if(obj == PARSE_STATE_ITEM){ //If was doing another item, add it to the menu list
+						if(tempElement.name.empty() || tempElement.type == 0 || (tempElement.type == 4 && tempElement.app.empty())){
+							logSDLMessage(std::cout, "buttons.json ERROR, incomplete menuitem");
+							return false;
+						}
+						else{
+							tempElement2.items.push_back(tempElement);
+						}
+					} else {
+						printf("Parse issue\n");
+					}
+                } else {
+                     printf("buttons.json ERROR, invalid key: %s\n", tmp.c_str());
                 }
-                else{ //Things broke
-                    logSDLMessage(std::cout, "buttons.cfg ERROR, unexpected element " + (*tokensIt));
-                    return false;
-                }
-                break;
-
-            default:
-                return false;
-                break;
+            }
+        }
+    }
+	//Close the last item
+	if(obj == PARSE_STATE_MAIN){ //Add mainbutton to list
+		if(tempElement.app.empty() || tempElement.image.empty()){
+			logSDLMessage(std::cout, "buttons.json ERROR, incomplete mainbutton");
+			return false;
 		}
+		else{
+			MainButton *Temp = new MainButton;
+			if(!Temp->Init((SDL_GetBasePath() + tempElement.image), renderer)) {
+				logSDLMessage(std::cout, "buttons.json ERROR, mainbutton could not be loaded");
+				return false;
+			}
+			Temp->setApp(tempElement.app.c_str());
+			MainButtonList.push_back(Temp);
+			tempElement = nullElement;
+		}
+	} else if(obj == PARSE_STATE_MENU){ //Add menubutton to list
+		if(tempElement.image.empty() || tempElement.items.size() <= 0){
+			logSDLMessage(std::cout, "buttons.json ERROR, incomplete menubutton");
+			return false;
+		} else {
+			MenuButton *Temp = new MenuButton;
+			if(!Temp->Init((SDL_GetBasePath() + tempElement.image),renderer)) {
+				logSDLMessage(std::cout, "buttons.json ERROR, menubutton could not be loaded");
+				return false;
+			}
+			for(std::vector<ButtonElement>::iterator itemsIt = tempElement.items.begin(); itemsIt != tempElement.items.end(); itemsIt++) { //PARSE_STATE_ITEM checks for completeness, so no need to check here
+				if((*itemsIt).type == PARSE_MENUITEM_APPLAUNCH){
+					if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, (*itemsIt).app.c_str(),""))
+						return false;
+				}
+				else if((*itemsIt).type == PARSE_MENUITEM_QUIT){
+					if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
+						return false;
+				}
+				else if((*itemsIt).type == PARSE_MENUITEM_REBOOT){
+					if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
+						return false;
+				}
+				else if((*itemsIt).type == PARSE_MENUITEM_SHUTDOWN){
+					if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
+						return false;
+				}
+			}
+			BottomButtonList.push_back(Temp);
+			tempElement = nullElement;
+		}
+	} else if(obj == PARSE_STATE_ITEM){
+		//Add current item to menubutton list
+		if(tempElement.name.empty() || tempElement.type == 0 || (tempElement.type == 4 && tempElement.app.empty())){
+			logSDLMessage(std::cout, "buttons.json ERROR, incomplete menuitem");
+			return false;
+		}
+		else{
+			tempElement2.items.push_back(tempElement);
+		}
+
+		//Add menubutton to list
+		tempElement = tempElement2;
+		tempElement2 = nullElement;
+		if(tempElement.image.empty() || tempElement.items.size() <= 0){
+			logSDLMessage(std::cout, "buttons.json ERROR, incomplete menubutton");
+			return false;
+		} else {
+			MenuButton *Temp = new MenuButton;
+			if(!Temp->Init((SDL_GetBasePath() + tempElement.image),renderer)) {
+				logSDLMessage(std::cout, "buttons.json ERROR, menubutton could not be loaded");
+				return false;
+			}
+			for(std::vector<ButtonElement>::iterator itemsIt = tempElement.items.begin(); itemsIt != tempElement.items.end(); itemsIt++) { //PARSE_STATE_ITEM checks for completeness, so no need to check here
+				if((*itemsIt).type == PARSE_MENUITEM_APPLAUNCH){
+					if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, (*itemsIt).app.c_str(),""))
+						return false;
+				}
+				else if((*itemsIt).type == PARSE_MENUITEM_QUIT){
+					if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
+						return false;
+				}
+				else if((*itemsIt).type == PARSE_MENUITEM_REBOOT){
+					if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
+						return false;
+				}
+				else if((*itemsIt).type == PARSE_MENUITEM_SHUTDOWN){
+					if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
+						return false;
+				}
+			}
+			BottomButtonList.push_back(Temp);
+			tempElement = nullElement;
+		}
+	} else {
+		printf("Parse issue\n");
 	}
-	//We broke out of the file, but we need to close the last object
-    if(state == PARSE_STATE_MAIN){
-        if(tempMain.app.empty() || tempMain.image.empty()){
-            logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete mainbutton");
-            return false;
-        }
-        else{
-            MainButton *Temp = new MainButton;
-            if(!Temp->Init((SDL_GetBasePath() + tempMain.image),renderer)) {
-                logSDLMessage(std::cout, "buttons.cfg ERROR, mainbutton could not be loaded");
-                return false;
-            }
-            Temp->setApp(tempMain.app.c_str());
-            MainButtonList.push_back(Temp);
-        }
-    }
-    else if(state == PARSE_STATE_ITEM){
-        if(tempItem.name.empty() || tempItem.type == 0 || (tempItem.type == 4 && tempItem.app.empty())){
-            logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete menuitem");
-            return false;
-        }
-        else{
-            tempMenu.items.push_back(tempItem);
-        }
-        if(tempMenu.image.empty() || tempMenu.items.size() <= 0){
-            logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete menubutton");
-            return false;
-        }
-        else{
-            MenuButton *Temp = new MenuButton;
-            if(!Temp->Init((SDL_GetBasePath() + tempMenu.image),renderer)) {
-                logSDLMessage(std::cout, "buttons.cfg ERROR, menubutton could not be loaded");
-                return false;
-            }
-            for(std::vector<MenuItemElements>::iterator itemsIt = tempMenu.items.begin(); itemsIt != tempMenu.items.end(); itemsIt++) { //PARSE_STATE_ITEM checks for completeness, so no need to check here
-                if((*itemsIt).type == PARSE_MENUITEM_APPLAUNCH){
-                    if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, (*itemsIt).app.c_str(),""))
-                        return false;
-                }
-                else if((*itemsIt).type == PARSE_MENUITEM_QUIT){
-                    if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
-                        return false;
-                }
-                else if((*itemsIt).type == PARSE_MENUITEM_REBOOT){
-                    if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
-                        return false;
-                }
-                else if((*itemsIt).type == PARSE_MENUITEM_SHUTDOWN){
-                    if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
-                        return false;
-                }
-            }
-            BottomButtonList.push_back(Temp);
-        }
-    }
-    else if(state == PARSE_STATE_MENU){
-        if(tempMenu.image.empty() || tempMenu.items.size() <= 0){
-            logSDLMessage(std::cout, "buttons.cfg ERROR, incomplete menubutton");
-            return false;
-        }
-        else{
-            MenuButton *Temp = new MenuButton;
-            if(!Temp->Init((SDL_GetBasePath() + tempMenu.image),renderer)) {
-                logSDLMessage(std::cout, "buttons.cfg ERROR, menubutton could not be loaded");
-                return false;
-            }
-            for(std::vector<MenuItemElements>::iterator itemsIt = tempMenu.items.begin(); itemsIt != tempMenu.items.end(); itemsIt++) { //PARSE_STATE_ITEM checks for completeness, so no need to check here
-                if((*itemsIt).type == PARSE_MENUITEM_APPLAUNCH){
-                    if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_APPLAUNCH, (*itemsIt).app.c_str(),""))
-                        return false;
-                }
-                else if((*itemsIt).type == PARSE_MENUITEM_QUIT){
-                    if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_QUIT, &quit))
-                        return false;
-                }
-                else if((*itemsIt).type == PARSE_MENUITEM_REBOOT){
-                    if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_REBOOT))
-                        return false;
-                }
-                else if((*itemsIt).type == PARSE_MENUITEM_SHUTDOWN){
-                    if(!Temp->LoadItem((*itemsIt).name, font, textColor, renderer, MENUITEM_TYPE_SHUTDOWN, MENUITEM_SHUTDOWN_SHUTDOWN))
-                        return false;
-                }
-                return false;
-            }
-            BottomButtonList.push_back(Temp);
-        }
-    }
     return true;
 }
 

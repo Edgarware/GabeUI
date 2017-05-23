@@ -1,11 +1,8 @@
-#ifndef MENUITEM_H_
-#define MENUITEM_H_
+#pragma once
 
 #include "Button.h"
 #include <stdlib.h>
 #include <iostream>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 
 enum {
 	MENUITEM_SHUTDOWN_SHUTDOWN=0,
@@ -40,5 +37,3 @@ public:
 	bool Activate();
 	void Render(SDL_Renderer *ren);
 };
-
-#endif

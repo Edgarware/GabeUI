@@ -1,9 +1,7 @@
-#ifndef BUTTON_H_
-#define BUTTON_H_
+#pragma once
 
 #include <string>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include "OS.h"
 
 /********
 Button - Self enclosed button for creating interactable buttons
@@ -64,5 +62,3 @@ public:
 	virtual void Render(SDL_Renderer *ren);
 	virtual void Cleanup();
 };
-
-#endif

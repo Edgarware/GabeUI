@@ -1,0 +1,35 @@
+{
+	"mainbutton" : {
+		"image" : "Assets/steam.png",
+		"command" : "C:/Program Files/Steam.exe",
+		"args" : "--tenfoot"
+	},
+	"mainbutton" : {
+		"image" : "Assets/plex.png",
+		"command" : "openpht.sh"
+	},
+	"mainbutton" : {
+		"image" : "Assets/Kodi.png",
+		"command" : "kodi"
+	},
+	"menubutton" : {
+		"image" : "Assets/exit.png",
+		"menuitem" : {
+			"name" : "Test",
+			"type" : "application",
+			"command" : "test"
+		},
+		"menuitem" : {
+			"name" : "Shutdown",
+			"type" : "shutdown"
+		},
+		"menuitem" : {
+			"name" : "Restart",
+			"type" : "restart"
+		},
+		"menuitem" : {
+			"name" : "Quit",
+			"type" : "quit"
+		}
+	}
+}
