@@ -13,6 +13,7 @@ enum {
 class MainButton : public Button {
 private:
 	char *application;
+	char *args;
 	uint32_t LastTime;
 	int animState;
 	int activeAnim;
@@ -25,7 +26,7 @@ private:
 
 public:
 	MainButton();
-	void setApp(const char *app);
+	void setApp(const char *app, const char *args);
     void setW(int val);
     void setH(int val);
 	bool Init(std::string ImagePath, SDL_Renderer *ren);

@@ -371,7 +371,6 @@ bool App::configParse(std::ifstream *config){
         logSDLMessage(std::cout, "buttons.json ERROR, file unopenable");
         return false;
     }
-
     buffer << config->rdbuf();
     std::string output = buffer.str();
 
@@ -426,7 +425,7 @@ bool App::configParse(std::ifstream *config){
 						tempElement.type = PARSE_MENUITEM_REBOOT;
 					else if(tmp.compare("quit") == 0)
 						tempElement.type = PARSE_MENUITEM_QUIT;
-					else if(tmp.compare("app") == 0)
+					else if(tmp.compare("app") == 0 || tmp.compare("application") == 0)
 						tempElement.type = PARSE_MENUITEM_APPLAUNCH;
 					else
 						printf("Parse Error\n");
@@ -457,7 +456,7 @@ bool App::configParse(std::ifstream *config){
 								logSDLMessage(std::cout, "buttons.json ERROR, mainbutton could not be loaded");
 								return false;
 							}
-							Temp->setApp(tempElement.app.c_str());
+							Temp->setApp(tempElement.app.c_str(), tempElement.params.c_str());
 							MainButtonList.push_back(Temp);
 							tempElement = nullElement;
 						}
@@ -571,7 +570,7 @@ bool App::configParse(std::ifstream *config){
 				logSDLMessage(std::cout, "buttons.json ERROR, mainbutton could not be loaded");
 				return false;
 			}
-			Temp->setApp(tempElement.app.c_str());
+			Temp->setApp(tempElement.app.c_str(), tempElement.params.c_str());
 			MainButtonList.push_back(Temp);
 			tempElement = nullElement;
 		}

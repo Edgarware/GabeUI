@@ -1,36 +1,25 @@
 CC=g++
+RM=rm
 
 SDL_CFLAGS := $(shell pkg-config --cflags sdl2 SDL2_image SDL2_ttf)
 SDL_LIBS := $(shell pkg-config --libs sdl2 SDL2_image SDL2_ttf)
 
-override CFLAGS += -c -Wall -Wextra $(SDL_CFLAGS)
+override CFLAGS += -DDEBUG -g -c -Wall $(SDL_CFLAGS)
 LDFLAGS = 
+
+SRC = $(wildcard src/*.cpp)
+OBJ = $(patsubst src/%.cpp, %.o, $(SRC))
 
 all : gabeui
 
-gabeui: App.o MenuItem.o MenuButton.o MainButton.o Button.o Menu.o main.o
-	$(CC) $(LDFLAGS) main.o MenuItem.o MenuButton.o MainButton.o Menu.o Button.o App.o -o gabeui $(SDL_LIBS)
+gabeui: $(OBJ) jsmn.o
+	$(CC) $(LDFLAGS) $(OBJ) jsmn.o -o gabeui $(SDL_LIBS)
 
-main.o: src/main.cpp
-	$(CC) $(CFLAGS) src/main.cpp
+%.o: src/%.cpp
+	$(CC) $(CFLAGS) $< -o $@
 
-App.o: src/App.cpp
-	$(CC) $(CFLAGS) src/App.cpp
-
-MenuItem.o: src/MenuItem.cpp
-	$(CC) $(CFLAGS) src/MenuItem.cpp
-
-MenuButton.o: src/MenuButton.cpp
-	$(CC) $(CFLAGS) src/MenuButton.cpp
-
-Menu.o: src/Menu.cpp
-	$(CC) $(CFLAGS) src/Menu.cpp
-
-MainButton.o: src/MainButton.cpp
-	$(CC) $(CFLAGS) src/MainButton.cpp
-
-Button.o: src/Button.cpp
-	$(CC) $(CFLAGS) src/Button.cpp
+jsmn.o: src/jsmn/jsmn.c
+	$(CC) $(CFLAGS) src/jsmn/jsmn.c
 
 clean:
-	rm -f *o gabeui
+	$(RM) -f *o gabeui

@@ -1,7 +1,7 @@
 #include "MainButton.h"
 
 #ifdef _WIN32
-bool OSLaunch(const char* application){
+bool OSLaunch(const char* application, const char* args){
 	/*STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));
@@ -19,12 +19,13 @@ bool OSLaunch(const char* application){
     return true;
 }
 #elif __linux__
-bool OSLaunch(const char* application){
+//Args are broken
+bool OSLaunch(const char* application, const char* args){
     pid_t pid = fork();
     int status;
     if(pid == 0){ //baby cakes
         setpgid(0, 0);
-        execlp(application, application, NULL);
+        execlp(application, application, args, NULL);
         return false; //BAD THINGS HAPPENED
     }
     else if(pid > 0){ //momma bird
@@ -36,6 +37,7 @@ bool OSLaunch(const char* application){
         return false;
     }
     return false;
+}
 #endif
 
 MainButton::MainButton(){
@@ -61,8 +63,9 @@ MainButton::MainButton(){
 	B_Size.h = 0;
 }
 
-void MainButton::setApp(const char *app){
+void MainButton::setApp(const char *app, const char *args){
     application = strdup(app);
+	args = strdup(app);
 }
 
 //W and H should only be set by setProportional
@@ -134,7 +137,7 @@ void MainButton::SetProportionalSizeH(int height){
 }
 
 bool MainButton::Activate(){
-	return OSLaunch(application);
+	return OSLaunch(application, args);
 }
 
 void MainButton::Render(SDL_Renderer *ren){
