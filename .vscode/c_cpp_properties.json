@@ -37,7 +37,9 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceRoot}"
+                "${workspaceRoot}/SDL2/include",
+                "${workspaceRoot}/jsmn",
+                "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.10.25017/include"
             ],
             "defines": [
                 "_DEBUG",

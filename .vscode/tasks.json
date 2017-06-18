@@ -3,12 +3,14 @@
     // for the documentation about the tasks.json format
     "version": "0.1.0",
     "windows": {
-        "command": "???"
+        "command": "WinBuild.bat",
+        "args": []
     },
     "linux":{
-      "command": "make"  
+        "command": "make",
+        "args": []
     },
     "isShellCommand": true,
-    "args": [],
+
     "showOutput": "always"
 }
