@@ -31,5 +31,8 @@
 			"name" : "Quit",
 			"type" : "quit"
 		}
+	},
+	"menubutton" :{
+		"image" : "Assets/settings.png"
 	}
 }

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _OS_H__
+#define _OS_H__
 
 //WINDOWS SPECIFIC CODE/DEFINES
 #ifdef _WIN32
@@ -6,7 +7,7 @@
 #include "SDL_image.h"
 #include "SDL_ttf.h"
 
-#include <windows.h>
+//#include <windows.h>
 #include <tchar.h>
 
 //LINUX SPECIFIC CODE/DEFINES
@@ -19,4 +20,5 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 
+#endif
 #endif
