@@ -54,11 +54,26 @@ int Draw_Screen(SDL_Renderer *renderer){
     SDL_RenderClear(renderer);
     for(i = 0; i < button_num; i++){
         // Escape on null button
-        if(button_list[i].type == 0)
-            break;
+        if(button_list[i].type == BUTTON_TYPE_NONE)
+            continue;
 
-        //Draw Button
+        //If a menubutton, add a background
+        
+        if(button_list[i].type == BUTTON_TYPE_MENUBUTTON) {
+            if(button_list[i].button.state == BUTTON_STATE_UNSELECTED){
+                SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0xFF, 0xFF);
+            } else {
+                SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
+            }
+            SDL_RenderFillRect(renderer, &button_list[i].button.pos);
+        }
+        //Draw Saved Texture
         SDL_RenderCopy(renderer, button_list[i].button.texture, NULL, &button_list[i].button.pos);
+        if(button_list[i].type == BUTTON_TYPE_APPBUTTON && button_list[i].button.state == BUTTON_STATE_UNSELECTED){
+            //TODO: Handle animations, for now just make unselected darker
+            SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xC0);
+            SDL_RenderFillRect(renderer, &button_list[i].button.pos);
+        }
 
         //If dev mode, check to see if mouse bounds are within button bounds
         if(dev_mode == SDL_TRUE && has_dev_outline == SDL_FALSE){
@@ -69,7 +84,6 @@ int Draw_Screen(SDL_Renderer *renderer){
 
                 //Save which button it is so we can draw it last
                 temp_button = button_list[i];
-
                 //Make sure we dont try and do this for more than 1 button, will break a lot
                 has_dev_outline = SDL_TRUE;
             }
@@ -83,7 +97,7 @@ int Draw_Screen(SDL_Renderer *renderer){
         //Draw Button info
         if(has_dev_outline == SDL_TRUE){
             //TODO: Could use some cleanup 
-            //      May want this to be extensible to multiple button types
+            //      May want this to include per-button-type fields
             FC_Draw(diag_font, renderer, RIGHT_ALLIGN(FC_GetWidth(diag_font, BUTTON_INFO_PRINT(temp_button.button))), BOTTOM_ALLIGN(FC_GetHeight(diag_font, BUTTON_INFO_PRINT(temp_button.button))), BUTTON_INFO_PRINT(temp_button.button));
         }
     }

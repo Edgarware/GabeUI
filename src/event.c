@@ -1,5 +1,7 @@
 #include "event.h"
 
+#define JOY_DEADZONE 5000
+
 SDL_GameController* controller;
 SDL_Window* window;
 
@@ -14,6 +16,20 @@ void Event_ScanForController(){
 		}
 	}
 }
+
+void Move(int direction){
+    int i;
+    for(i = 0; i < button_num; i++){
+        if(button_list[i].button.state == BUTTON_STATE_SELECTED){
+            if(button_list[i].button.directions[direction] != NULL){
+                button_list[i].button.state = BUTTON_STATE_UNSELECTED;
+                button_list[i].button.directions[direction]->button.state = BUTTON_STATE_SELECTED;
+            }
+            break;
+        }
+    }
+}
+
 
 void ToggleDevMode(){
     if(dev_mode == 0){
@@ -68,7 +84,21 @@ int Event_Handle(){
         joy_x = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
         joy_y = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
 
-        printf("%d, %d\n", joy_x, joy_y);
+        //TODO: Use a counter to make this not happen every frame
+        if(abs(joy_x) > JOY_DEADZONE){
+            if(joy_x < 0){
+                Move(BUTTON_DIR_LEFT);
+            } else {
+                Move(BUTTON_DIR_RIGHT);
+            }
+        }
+        if(abs(joy_y) > JOY_DEADZONE){
+            if(joy_y < 0){
+                Move(BUTTON_DIR_UP);
+            } else {
+                Move(BUTTON_DIR_DOWN);
+            }
+        }
     }
 
     // Handle SDL Events
@@ -116,6 +146,18 @@ int Event_Handle(){
                     }
                     if(event.key.keysym.sym == SDLK_F1){
                         ToggleDevMode();
+                    }
+                    if(event.key.keysym.sym == SDLK_UP){
+                        Move(BUTTON_DIR_UP);
+                    }
+                    if(event.key.keysym.sym == SDLK_DOWN){
+                        Move(BUTTON_DIR_DOWN);
+                    }
+                    if(event.key.keysym.sym == SDLK_LEFT){
+                        Move(BUTTON_DIR_LEFT);
+                    }
+                    if(event.key.keysym.sym == SDLK_RIGHT){
+                        Move(BUTTON_DIR_RIGHT);
                     }
                 }
                 break;

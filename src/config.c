@@ -4,21 +4,73 @@
 #include <string.h>
 
 #define GET_SUBSTRING(in_string, out_string, token) strncpy(out_string, in_string + token.start, token.end-token.start)
+#define MAX(x, y) (x > y) ? x : y
 
 //UI Offsets & Scales
 #define UI_PAD 0.03f
+#define BOTTOMROW_PAD 80
+
+uint32_t appbutton_num;
+uint32_t menubutton_num;
 
 //TODO: Make sure to update this whenever the button format changes
 void CleanUnion(union TopButton *button){
     button->type = BUTTON_TYPE_NONE;
     button->button.name = "";
+    button->button.state = BUTTON_STATE_UNSELECTED;
     button->button.texture = NULL;
     button->button.pos.x = 0;
     button->button.pos.y = 0;
     button->button.pos.w = 0;
     button->button.pos.h = 0;
+    button->button.base_size.x = 0;
+    button->button.base_size.y = 0;
+    button->button.base_size.w = 0;
+    button->button.base_size.h = 0;
+    button->button.directions[BUTTON_DIR_DOWN]  = NULL;
+    button->button.directions[BUTTON_DIR_UP]    = NULL;
+    button->button.directions[BUTTON_DIR_LEFT]  = NULL;
+    button->button.directions[BUTTON_DIR_RIGHT] = NULL;
+
     button->appbutton.application = "";
     button->appbutton.arguments = "";
+}
+
+void PopulateGridPointers(union TopButton **appgrid, union TopButton **menugrid, int app_col, int app_row){
+    int i, j;
+
+    //Populate appbutton pointers
+    for(i = 0; i < app_row; i++){
+        for(j = 0; j < app_col; j++){
+            if(j + (i * app_col) >= appbutton_num)
+                break;
+
+            if(i > 0){
+                appgrid[j + (i * app_col)]->button.directions[BUTTON_DIR_UP] = appgrid[j + ((i - 1) * app_col)];
+            }
+            if(j > 0){
+                appgrid[j + (i * app_col)]->button.directions[BUTTON_DIR_LEFT] = appgrid[(j - 1) + (i * app_col)];
+            }
+            if(j + 1 < app_col && (j + 1) + (i * app_col) < appbutton_num){
+                appgrid[j + (i * app_col)]->button.directions[BUTTON_DIR_RIGHT] = appgrid[(j + 1) + (i * app_col)];
+            }
+            if(i + 1 < app_row && j + ((i + 1) * app_col) < appbutton_num){
+                appgrid[j + (i * app_col)]->button.directions[BUTTON_DIR_DOWN] = appgrid[j + ((i + 1) * app_col)];
+            } else {
+                appgrid[j + (i * app_col)]->button.directions[BUTTON_DIR_DOWN] = menugrid[menubutton_num - 1];
+            }
+        }
+    }
+    //Populate menubutton pointers
+    for(i = 0; i < menubutton_num; i++){
+        menugrid[i]->button.directions[BUTTON_DIR_UP] = appgrid[appbutton_num - 1];
+        if(i > 0) {
+            menugrid[i]->button.directions[BUTTON_DIR_RIGHT] = menugrid[i - 1];
+        }
+        if(i + 1 < menubutton_num){
+            menugrid[i]->button.directions[BUTTON_DIR_LEFT] = menugrid[i + 1];
+        }
+    }
 }
 
 void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
@@ -32,8 +84,14 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
 
     SDL_Surface* tmp_surface;
 
+    //TODO:
+    // I kinda want it to support hot-loading at some point, pipe dream
+    // If we do that we need to make sure to cleanup the current button list before processing
+
     //Initialize some variables
     button_num = 0;
+    appbutton_num = 0;
+    menubutton_num = 0;
 
     //Read File into a single string
     conf_file = fopen(filename, "rb");
@@ -88,11 +146,14 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                     return;
                 }
 
-                if(strcmp(temp_string, "mainbutton") == 0)
+                if(strcmp(temp_string, "mainbutton") == 0){
                     temp_button.type = BUTTON_TYPE_APPBUTTON;
-                else if(strcmp(temp_string, "menubutton") == 0)
+                    appbutton_num += 1;
+                }
+                else if(strcmp(temp_string, "menubutton") == 0){
                     temp_button.type = BUTTON_TYPE_MENUBUTTON;
-
+                    menubutton_num += 1;
+                }
             //MenuItems
             } else if(strcmp(temp_string, "menuitem") == 0) {
                 printf("MenuItem!\n");
@@ -119,7 +180,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 SDL_FreeSurface(tmp_surface);
 
                 //Make note of our texture's size
-                SDL_QueryTexture(temp_button.button.texture, NULL, NULL, &temp_button.button.pos.w, &temp_button.button.pos.h);
+                SDL_QueryTexture(temp_button.button.texture, NULL, NULL, &temp_button.button.base_size.w, &temp_button.button.base_size.h);
             }
             //TODO:
             //  Command
@@ -136,16 +197,30 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
         CleanUnion(&temp_button);
     }
 
+    //Set starting selected button
+    for(i = 0; i < button_num; i++){
+        if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
+            button_list[i].button.state = BUTTON_STATE_SELECTED;
+            break;
+        }
+    }
+
     free(conf_text);
 }
 
 void Config_OrganizeButtons(SDL_Renderer *renderer) {
+    //Here lies some bad math
+    SDL_bool grid_fits;
+    union TopButton **appgrid;
+    union TopButton **menugrid;
     int i, window_w, window_h, ui_pad;
-    int temp1, temp2;
-    int app_width, app_height;
-    int appbutton_padx = 0;
-    int appbutton_pady = 0;
-    int appbutton_total = 0;
+    int appbutton_padx, appbutton_pady, xx;
+    int temp;
+    int num_rows = 0;
+    int num_cols = 0;
+
+    int app_width = 0;
+    int app_height = 0;
     int menubutton_pad = 0;
     int row_num = 0;
     int col_num = 0;
@@ -153,65 +228,142 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
 
     //Loop through list of buttons and arrange
     SDL_GetRendererOutputSize(renderer, &window_w, &window_h);
-    printf("%d, %d\n", window_w, window_h);
 
-    temp1 = UI_PAD * window_w;
-    temp2 = UI_PAD * window_h;
-    if(temp1 > temp2)
-        ui_pad = temp1;
-    else
-        ui_pad = temp2;
+    //Determine base padding values
+    ui_pad = MAX(UI_PAD * window_w, UI_PAD * window_h);
 
-    //Figure out the appbutton scaling first
+    //Reset Directional Pointers
     for(i = 0; i < button_num; i++){
         if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
-            
-            appbutton_total += 1;
+            button_list[i].button.directions[BUTTON_DIR_UP] = NULL;
+            button_list[i].button.directions[BUTTON_DIR_DOWN] = NULL;
+            button_list[i].button.directions[BUTTON_DIR_LEFT] = NULL;
+            button_list[i].button.directions[BUTTON_DIR_RIGHT] = NULL;
         }
     }
-    app_width = (window_w - (3 * ui_pad)) / 2;
-    app_height = (window_h - (appbutton_total/2) * ui_pad) / (appbutton_total/2);
 
-    if(app_width == 0){
-        SDL_Log("BAD SCALE CALCULATION");
-    }
-
-    appbutton_pady = ui_pad;
+    //Determine maximum number of columns
+    //this is the number of buttons we can fit width-wise WITHOUT shrinking (and with minimum padding)
+    temp = ui_pad;
     for(i = 0; i < button_num; i++){
         if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
-            //if(app_height > app_width){
-                button_list[i].button.pos.h =(int)((float)button_list[i].button.pos.h/(float)button_list[i].button.pos.w * (float)app_width);
+            temp += button_list[i].button.base_size.w + ui_pad;
+            num_cols += 1;
+            if(temp > window_w)
+                break;
+        }
+    }
+
+    //Use the number of columns to determine width of each element
+    app_width = (window_w - ((num_cols+1) * ui_pad)) / num_cols;
+
+    //USING THAT WIDTH, determine the height we have to be to support it
+    appbutton_pady = ui_pad + BOTTOMROW_PAD;
+    for(i = 0; i < button_num; i++){
+        if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
+            temp = (int)((float)button_list[i].button.base_size.h/(float)button_list[i].button.base_size.w * (float)app_width);
+
+            if(temp > height_max){
+                height_max = temp;
+            }
+
+            col_num += 1;
+            if(col_num >= num_cols){
+                num_rows += 1;
+                appbutton_pady += height_max + ui_pad;
+                height_max = 0;
+            }
+        }
+    }
+
+    //IF WE DONT FIT, size elements based on maximum HEIGHT rather than maximum width
+    if(appbutton_pady > window_h){
+        app_height = (window_h - ((num_rows+1) * ui_pad) - BOTTOMROW_PAD) / num_rows; //Hight required to fit the rows
+        app_width = 0;
+
+        //Determine how much we need to pad on the Left & Right to center the view
+        //This one is harder to do, since we need to recalculate how wide a whole row is going to be
+        appbutton_padx = 0;
+        col_num = 0;
+        for(i = 0; i < button_num; i++){
+            if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
+                temp = (int)((float)button_list[i].button.base_size.w/(float)button_list[i].button.base_size.h * (float)app_height);
+
+                appbutton_padx += temp + ui_pad;
+                col_num += 1;
+                if(col_num >= num_cols)
+                    break;
+            }
+        }
+        appbutton_pady = ui_pad;
+        appbutton_padx = xx = (int)((float)window_w/2.0f - (float)(appbutton_padx - ui_pad)/2.0f);
+    } else {
+        //Determine how much we need to pad on the top-bottom to center the view
+        appbutton_padx = ui_pad;
+        appbutton_pady = (int)((float)window_h/2.0f - (float)(appbutton_pady - ui_pad)/2.0f);
+        xx = ui_pad;
+    }
+
+    //Allocate matricies for use in directional movement
+    appgrid = malloc(sizeof(union TopButton) * num_cols * num_rows);
+    menugrid = malloc(sizeof(union TopButton) * menubutton_num);
+
+    //Set the position data of each button
+    height_max = 0;
+    col_num = row_num = 0;
+    for(i = 0; i < button_num; i++){
+        if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
+            if(app_height == 0){
+                button_list[i].button.pos.h =(int)((float)button_list[i].button.base_size.h/(float)button_list[i].button.base_size.w * (float)app_width);
                 button_list[i].button.pos.w = app_width;
-            //} else {
-            //    printf("THIS\n");
-            //    button_list[i].button.pos.w =(int)((float)button_list[i].button.pos.w/(float)button_list[i].button.pos.h * (float)app_height);
-            //    button_list[i].button.pos.h = app_height;
-            //}
-            button_list[i].button.pos.x = appbutton_padx + ui_pad;
+            } else {
+                button_list[i].button.pos.w =(int)((float)button_list[i].button.base_size.w/(float)button_list[i].button.base_size.h * (float)app_height);
+                button_list[i].button.pos.h = app_height;
+            }
+            button_list[i].button.pos.x = appbutton_padx;
             button_list[i].button.pos.y = appbutton_pady;
 
             if(button_list[i].button.pos.h > height_max){
                 height_max = button_list[i].button.pos.h;
             }
-            appbutton_padx += button_list[i].button.pos.x + button_list[i].button.pos.w;
+            appbutton_padx += button_list[i].button.pos.w + ui_pad;
 
-            if(col_num == 1){
+            //Add button to grid
+            appgrid[col_num + (row_num * num_cols)] = &button_list[i];
+
+            if(col_num == num_cols - 1){
                 col_num = 0;
+                row_num += 1;
                 appbutton_pady += height_max + ui_pad;
-                appbutton_padx = 0;
+                appbutton_padx = xx;
                 height_max = 0;
             } else {
                 col_num += 1;
             }
+        }
+    }
 
-
-        } else if(button_list[i].type == BUTTON_TYPE_MENUBUTTON){
+    //Menubuttons are much less complex
+    temp = 0;
+    for(i = 0; i < button_num; i++){
+        //Align to bottom-right
+        if(button_list[i].type == BUTTON_TYPE_MENUBUTTON){
+            button_list[i].button.pos.w = button_list[i].button.base_size.w;
+            button_list[i].button.pos.h = button_list[i].button.base_size.h;
             button_list[i].button.pos.x = window_w - ui_pad - button_list[i].button.pos.w - menubutton_pad;
             button_list[i].button.pos.y = window_h - ui_pad - button_list[i].button.pos.h;
             if(button_list[i].button.pos.x < 0 || button_list[i].button.pos.y < 0){
+                //TODO: if window is too small to hold our button, scale it
                 SDL_Log("BAD POSITION CALCULATION");
             }
             menubutton_pad += window_w - button_list[i].button.pos.x;
+            menugrid[temp] = &button_list[i];
+            temp += 1;
         }
     }
+
+    //Populate directional grid pointers & handle selection state
+    PopulateGridPointers(appgrid, menugrid, num_cols, num_rows);
+    free(appgrid);
+    free(menugrid);
 }

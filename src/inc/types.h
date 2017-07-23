@@ -17,18 +17,50 @@ enum button_type {
     BUTTON_TYPE_MENUBUTTON
 };
 
+//Direction information
+enum button_dir {
+    BUTTON_DIR_DOWN,
+    BUTTON_DIR_UP,
+    BUTTON_DIR_LEFT,
+    BUTTON_DIR_RIGHT
+};
+
+//State information
+enum button_state {
+    BUTTON_STATE_UNSELECTED,
+    BUTTON_STATE_SELECTED,
+    BUTTON_STATE_ACTIVE
+};
+
 struct BaseButton {
     uint32_t type;
     char* name;
+    uint32_t state;
     SDL_Texture* texture;
-    SDL_Rect pos;   
+    SDL_Rect pos; //Size of button
+    SDL_Rect base_size; //Size of texture
+    union TopButton* directions[4]; //Pointer to the button in a particular direction from this one
 };
 
 struct AppButton {
     uint32_t type;
     char* name;
+    uint32_t state;
     SDL_Texture* texture;
     SDL_Rect pos; 
+    SDL_Rect base_size;
+    union TopButton* directions[4];
+    char* application;
+    char* arguments;
+};
+
+struct MenuItem {
+    //MenuItems is NOT compatible with TopButton, though the struct is similar
+    uint32_t type;
+    char* name;
+    uint32_t state;
+    SDL_Rect pos;
+    SDL_Rect text_size;
     char* application;
     char* arguments;
 };
@@ -36,8 +68,12 @@ struct AppButton {
 struct MenuButton{
     uint32_t type;
     char* name;
+    uint32_t state;
     SDL_Texture* texture;
     SDL_Rect pos;
+    SDL_Rect base_size;
+    union TopButton* directions[4];
+    struct MenuItem *menu;
 };
 
 union TopButton {
@@ -48,9 +84,9 @@ union TopButton {
 };
 
 union TopButton button_list[BUTTON_LIST_MAX];
+uint32_t button_num;
 
 //Common Variables
-uint32_t button_num;
 float fps;
 SDL_bool dev_mode;
 SDL_Point mouse_pos;

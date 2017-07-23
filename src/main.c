@@ -59,7 +59,7 @@ int main(int argc, char** argv){
         return 2;
     }
     SDL_SetWindowMinimumSize(window, 640, 480); //TODO: Doesnt do jack
-    //SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND); //Handle Transparency
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND); //Handle Transparency
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best"); //How we Scale
 
     /* Read Config File */
