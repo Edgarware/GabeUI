@@ -12,7 +12,7 @@ void Event_ScanForController(){
 			if (controller)
 		        break;
 			else
-		        SDL_Log(SDL_GetError());
+		        SDL_Log("Controller failure: %s", SDL_GetError());
 		}
 	}
 }

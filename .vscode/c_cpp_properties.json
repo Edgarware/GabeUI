@@ -23,6 +23,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceRoot}",
+                "${workspaceRoot}/src/inc",
+                "${workspaceRoot}/src",
                 "/usr/include",
                 "/usr/local/include"
             ],
@@ -31,7 +33,9 @@
                 "path": [
                     "/usr/include",
                     "/usr/local/include",
-                    "${workspaceRoot}"
+                    "${workspaceRoot}",
+                    "${workspaceRoot}/src/inc",
+                    "${workspaceRoot}/src"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""

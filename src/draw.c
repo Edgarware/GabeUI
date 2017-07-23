@@ -17,7 +17,7 @@ SDL_Rect Draw_GetSize(SDL_Texture* texture) {
     SDL_Rect ret;
     ret.x = ret.y = 0;
     if(SDL_QueryTexture(texture, NULL, NULL, &ret.w, &ret.h) != 0){
-        SDL_Log(SDL_GetError());
+        SDL_Log("Failed to load image: %s", SDL_GetError());
     }
     return ret;
 }

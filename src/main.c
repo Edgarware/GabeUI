@@ -33,10 +33,23 @@ void LogDialogWindow(void* userdata, int category, SDL_LogPriority priority, con
     }
 }
 
+void Main_Cleanup(){
+    int i;
+    Draw_Cleanup();
+    for(i = 0; i < button_num; i++){
+        if(button_list[i].type <= BUTTON_TYPE_NONE)
+            continue;
+        SDL_DestroyTexture(button_list[i].button.texture);
+        //probably have to free more shit
+    }
+    TTF_Quit();
+    IMG_Quit();
+    SDL_Quit();
+}
+
 int main(int argc, char** argv){
     SDL_Window *window;
     SDL_Renderer *renderer;
-    int i;
     uint32_t delay_msec, fps_limit_msec;
     uint64_t time_pre_loop, time_post_loop, time_last;
 
@@ -44,11 +57,15 @@ int main(int argc, char** argv){
     SDL_LogSetOutputFunction(LogDialogWindow, NULL);
 
     //Init SDL and Components
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_TIMER) != 0){
+	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_TIMER) != 0){
 		SDL_Log("SDL failed to initialize");
 		return 1;
 	}
-	if (TTF_Init() != 0){
+    if(IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG) != (IMG_INIT_JPG | IMG_INIT_PNG)){
+        SDL_Log("IMG failed to initialize");
+		return 1;
+    }
+	if(TTF_Init() != 0){
 		SDL_Log("TTF failed to initialize");
 		return 1;
 	}
@@ -61,6 +78,8 @@ int main(int argc, char** argv){
     SDL_SetWindowMinimumSize(window, 640, 480); //TODO: Doesnt do jack
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND); //Handle Transparency
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best"); //How we Scale
+
+    atexit(Main_Cleanup);
 
     /* Read Config File */
     Config_ReadConfig("buttons.json", renderer);
@@ -102,15 +121,7 @@ int main(int argc, char** argv){
     }
 
     //Cleanup
-    Draw_Cleanup();
-    for(i = 0; i < button_num; i++){
-        if(button_list[i].type <= BUTTON_TYPE_NONE)
-            continue;
-        SDL_DestroyTexture(button_list[i].button.texture);
-        //probably have to free more shit
-    }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-    SDL_Quit();
     return 0;
 }

@@ -118,7 +118,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     //Tokenize string
     jsmn_init(&json_parser);
     if((temp = jsmn_parse(&json_parser, conf_text, strlen(conf_text), json_tokens, 100)) < 0){
-        SDL_Log("Error tokenizing json: %d", temp);
+        SDL_Log("Error tokenizing json: %ld", temp);
         return;
     }
 
@@ -154,6 +154,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                     temp_button.type = BUTTON_TYPE_MENUBUTTON;
                     menubutton_num += 1;
                 }
+
             //MenuItems
             } else if(strcmp(temp_string, "menuitem") == 0) {
                 printf("MenuItem!\n");
@@ -175,7 +176,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 tmp_surface = IMG_Load(temp_string);
                 temp_button.button.texture = SDL_CreateTextureFromSurface(renderer, tmp_surface);
                 if(temp_button.appbutton.texture == NULL){
-                    SDL_Log(SDL_GetError());
+                    SDL_Log("Failed to load image: %s", SDL_GetError());
                 }
                 SDL_FreeSurface(tmp_surface);
 
@@ -210,7 +211,6 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
 
 void Config_OrganizeButtons(SDL_Renderer *renderer) {
     //Here lies some bad math
-    SDL_bool grid_fits;
     union TopButton **appgrid;
     union TopButton **menugrid;
     int i, window_w, window_h, ui_pad;
@@ -364,6 +364,8 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
 
     //Populate directional grid pointers & handle selection state
     PopulateGridPointers(appgrid, menugrid, num_cols, num_rows);
+
+    //Cleanup
     free(appgrid);
     free(menugrid);
 }

@@ -17,7 +17,6 @@
 #include <SDL2/SDL_ttf.h>
 
 #include <unistd.h>
-#include <sys/wait.h>
 #include <stdlib.h>
 
 #endif
