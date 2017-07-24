@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 FC_Font* diag_font;
+FC_Font* font;
 SDL_Rect window_size;
 SDL_Color bg_color;
 
@@ -30,6 +31,9 @@ void Draw_Init(SDL_Renderer *renderer){
     diag_font = FC_CreateFont();
     FC_LoadFont(diag_font, renderer, "Assets/calibri.ttf", 16, FC_MakeColor(0xFF, 0xFF, 0xFF, 0xFF), TTF_STYLE_NORMAL);
 
+    font = FC_CreateFont();
+    FC_LoadFont(font, renderer, "Assets/calibri.ttf", 20, FC_MakeColor(0xFF, 0xFF, 0xFF, 0xFF), TTF_STYLE_NORMAL);
+
     //Set Background color
     bg_color.r = 0x60;
     bg_color.g = 0x60;
@@ -39,12 +43,13 @@ void Draw_Init(SDL_Renderer *renderer){
 
 void Draw_Cleanup(){
     FC_FreeFont(diag_font);
+    FC_FreeFont(font);
 }
 
 int Draw_Screen(SDL_Renderer *renderer){
-    int i;
-    SDL_bool has_dev_outline = SDL_FALSE;
+    int i, j;
     union TopButton temp_button;
+    SDL_bool has_dev_outline = SDL_FALSE;
 
     //If the window has resized, recalculate size
     if(did_resize == SDL_TRUE)
@@ -58,15 +63,23 @@ int Draw_Screen(SDL_Renderer *renderer){
             continue;
 
         //If a menubutton, add a background
-        
         if(button_list[i].type == BUTTON_TYPE_MENUBUTTON) {
             if(button_list[i].button.state == BUTTON_STATE_UNSELECTED){
                 SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0xFF, 0xFF);
+
+            } else if(button_list[i].button.state == BUTTON_STATE_ACTIVE){
+                SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
+                for(j = 0; j < button_list[i].menubutton.menu_num; j++){
+                    FC_Draw(font, renderer, button_list[i].menubutton.menu[j].pos.x, button_list[i].menubutton.menu[j].pos.y, "%s", button_list[i].menubutton.menu[j].name);
+                }
+
             } else {
                 SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
             }
+            
             SDL_RenderFillRect(renderer, &button_list[i].button.pos);
         }
+
         //Draw Saved Texture
         SDL_RenderCopy(renderer, button_list[i].button.texture, NULL, &button_list[i].button.pos);
         if(button_list[i].type == BUTTON_TYPE_APPBUTTON && button_list[i].button.state == BUTTON_STATE_UNSELECTED){

@@ -14,7 +14,7 @@ uint32_t appbutton_num;
 uint32_t menubutton_num;
 
 //TODO: Make sure to update this whenever the button format changes
-void CleanUnion(union TopButton *button){
+void CleanButton(union TopButton *button){
     button->type = BUTTON_TYPE_NONE;
     button->button.name = "";
     button->button.state = BUTTON_STATE_UNSELECTED;
@@ -34,7 +34,11 @@ void CleanUnion(union TopButton *button){
 
     button->appbutton.application = "";
     button->appbutton.arguments = "";
+
+    button->menubutton.menu = NULL;
+    button->menubutton.menu_num = 0;
 }
+
 
 void PopulateGridPointers(union TopButton **appgrid, union TopButton **menugrid, int app_col, int app_row){
     int i, j;
@@ -81,7 +85,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     int i;
     jsmn_parser json_parser;
     jsmntok_t json_tokens[100];
-
+    SDL_bool do_free;
     SDL_Surface* tmp_surface;
 
     //TODO:
@@ -122,10 +126,14 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
         return;
     }
 
+    //TODO: use a buncho mallocs rather than static data copies
+    //      Make this code less of a pain
+    
     union TopButton temp_button;
-    CleanUnion(&temp_button);
+    CleanButton(&temp_button);
     //Go through tokens and parse out info
     for(i = 1; i < temp; i++){
+        do_free = SDL_TRUE;
         //We only deal with Strings
         if(json_tokens[i].type == JSMN_STRING){
             temp_string = (char *)malloc(json_tokens[i].end - json_tokens[i].start + 1);
@@ -138,7 +146,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 if(temp_button.type != BUTTON_TYPE_NONE){
                     button_list[button_num] = temp_button;
                     button_num+=1;
-                    CleanUnion(&temp_button);
+                    CleanButton(&temp_button);
                 }
                 //There is a maximum number of buttons
                 if(button_num == BUTTON_LIST_MAX){
@@ -157,7 +165,10 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
 
             //MenuItems
             } else if(strcmp(temp_string, "menuitem") == 0) {
-                printf("MenuItem!\n");
+                if(temp_button.type != BUTTON_TYPE_MENUBUTTON){
+                    printf("BAD MENUITEM\n");
+                    continue;
+                }
 
             //Image
             } else if(strcmp(temp_string, "image") == 0) {
@@ -166,6 +177,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 i += 1;
                 if(json_tokens[i].type != JSMN_STRING){
                     printf("Whoopsies\n");
+                    continue;
                 }
 
                 temp_string = (char *)malloc(json_tokens[i].end - json_tokens[i].start + 1);
@@ -182,20 +194,87 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
 
                 //Make note of our texture's size
                 SDL_QueryTexture(temp_button.button.texture, NULL, NULL, &temp_button.button.base_size.w, &temp_button.button.base_size.h);
+            } else if(strcmp(temp_string, "command") == 0){
+                //Get next string
+                free(temp_string);
+                i += 1;
+                if(json_tokens[i].type != JSMN_STRING){
+                    printf("Whoopsies\n");
+                    continue;
+                }
+
+                temp_string = (char *)malloc(json_tokens[i].end - json_tokens[i].start + 1);
+                GET_SUBSTRING(conf_text, temp_string, json_tokens[i]);
+                temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
+
+                if(temp_button.type == BUTTON_TYPE_APPBUTTON){
+                    temp_button.appbutton.application = temp_string;
+                } else {
+                    printf("BAD APP\n");
+                }
+                do_free = SDL_FALSE;
+            } else if(strcmp(temp_string, "args") == 0){
+                //Get next string
+                free(temp_string);
+                i += 1;
+                if(json_tokens[i].type != JSMN_STRING){
+                    printf("Whoopsies\n");
+                    continue;
+                }
+
+                temp_string = (char *)malloc(json_tokens[i].end - json_tokens[i].start + 1);
+                GET_SUBSTRING(conf_text, temp_string, json_tokens[i]);
+                temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
+
+                if(temp_button.type == BUTTON_TYPE_APPBUTTON){
+                    temp_button.appbutton.arguments = temp_string;
+                } else {
+                    printf("BAD ARG\n");
+                }
+                do_free = SDL_FALSE;
+            } else if(strcmp(temp_string, "type") == 0){
+
+                //Get next string
+                free(temp_string);
+                i += 1;
+                if(json_tokens[i].type != JSMN_STRING){
+                    printf("Whoopsies\n");
+                    continue;
+                }
+
+                if(temp_button.type != BUTTON_TYPE_MENUBUTTON){
+                    continue;
+                }
+
+                temp_string = (char *)malloc(json_tokens[i].end - json_tokens[i].start + 1);
+                GET_SUBSTRING(conf_text, temp_string, json_tokens[i]);
+                temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
+
+                if(strcmp(temp_string, "quit") == 0){
+
+                } else if(strcmp(temp_string, "restart") == 0){
+
+                } else if(strcmp(temp_string, "shutdown") == 0){
+
+                } else if(strcmp(temp_string, "application") == 0){
+                
+                } else {
+                    printf("BAD TYPE\n");
+                }
             }
             //TODO:
             //  Command
             //  Arguments
             //  MenuItems
-
-            free(temp_string);
+            if(do_free == SDL_TRUE)
+                free(temp_string);
         } //END IF STRING
     }
     //Close previous button object if there was one
     if(temp_button.type != BUTTON_TYPE_NONE){
         button_list[button_num] = temp_button;
         button_num+=1;
-        CleanUnion(&temp_button);
+        CleanButton(&temp_button);
     }
 
     //Set starting selected button
@@ -298,7 +377,7 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
         appbutton_pady = ui_pad;
         appbutton_padx = xx = (int)((float)window_w/2.0f - (float)(appbutton_padx - ui_pad)/2.0f);
     } else {
-        //Determine how much we need to pad on the top-bottom to center the view
+        //Determine how much we need to pad on the top & bottom to center the view
         appbutton_padx = ui_pad;
         appbutton_pady = (int)((float)window_h/2.0f - (float)(appbutton_pady - ui_pad)/2.0f);
         xx = ui_pad;

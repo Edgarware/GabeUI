@@ -25,6 +25,16 @@ enum button_dir {
     BUTTON_DIR_RIGHT
 };
 
+//menu type
+enum menuitem_type {
+    MENUITEM_NONE,
+    MENUITEM_QUIT,
+    MENUITEM_SHUTDOWN,
+    MENUITEM_RESTART,
+    MENUITEM_APPLICATION
+};
+
+
 //State information
 enum button_state {
     BUTTON_STATE_UNSELECTED,
@@ -74,6 +84,7 @@ struct MenuButton{
     SDL_Rect base_size;
     union TopButton* directions[4];
     struct MenuItem *menu;
+    uint32_t menu_num;
 };
 
 union TopButton {

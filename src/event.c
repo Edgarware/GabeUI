@@ -17,8 +17,51 @@ void Event_ScanForController(){
 	}
 }
 
-void Move(int direction){
+int Activate(){
+    int i, j;
+    for(i = 0; i < button_num; i++){
+        if(button_list[i].button.state == BUTTON_STATE_SELECTED){
+            button_list[i].button.state = BUTTON_STATE_ACTIVE;
+
+            //TODO: OS_Launch return val check
+            if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
+                OS_Launch(button_list[i].appbutton.application, button_list[i].appbutton.arguments);
+                button_list[i].button.state = BUTTON_STATE_SELECTED;
+            }
+        
+        } else if(button_list[i].button.state == BUTTON_STATE_ACTIVE && button_list[i].type == BUTTON_TYPE_MENUBUTTON){
+            //Check menuitems
+            for(j = 0; j < button_list[i].menubutton.menu_num; j++){
+                if(button_list[i].menubutton.menu[j].state == BUTTON_STATE_SELECTED){
+                    switch(button_list[i].menubutton.menu[j].type){
+                        case MENUITEM_QUIT:
+                            return -3;
+                            break;
+                        case MENUITEM_APPLICATION:
+                            break;
+                        case MENUITEM_SHUTDOWN:
+                            break;
+                        case MENUITEM_RESTART:
+                            break;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+void Deactivate(){
     int i;
+    for(i = 0; i < button_num; i++){
+        if(button_list[i].button.state == BUTTON_STATE_ACTIVE){
+            button_list[i].button.state = BUTTON_STATE_SELECTED;
+        }
+    }
+}
+
+void Move(int direction){
+    int i, j;
     for(i = 0; i < button_num; i++){
         if(button_list[i].button.state == BUTTON_STATE_SELECTED){
             if(button_list[i].button.directions[direction] != NULL){
@@ -27,9 +70,28 @@ void Move(int direction){
             }
             break;
         }
+        if(button_list[i].button.state == BUTTON_STATE_ACTIVE && button_list[i].type == BUTTON_TYPE_MENUBUTTON){
+            for(j = 0; j < button_list[i].menubutton.menu_num; j++){
+                if(button_list[i].menubutton.menu[j].state == BUTTON_STATE_SELECTED){
+                    switch(direction){
+                        case BUTTON_DIR_UP:
+                            if(j + 1 < button_list[i].menubutton.menu_num){
+                                button_list[i].menubutton.menu[j].state = BUTTON_STATE_UNSELECTED;
+                                button_list[i].menubutton.menu[j+1].state = BUTTON_STATE_SELECTED;
+                            }
+                            break;
+                        case BUTTON_DIR_DOWN:
+                            if(j > 0){
+                                button_list[i].menubutton.menu[j].state = BUTTON_STATE_UNSELECTED;
+                                button_list[i].menubutton.menu[j-1].state = BUTTON_STATE_SELECTED;
+                            }
+                            break;
+                    }
+                }
+            }
+        }
     }
 }
-
 
 void ToggleDevMode(){
     if(dev_mode == 0){
@@ -132,9 +194,10 @@ int Event_Handle(){
             //Controller Buttons
             case SDL_CONTROLLERBUTTONDOWN:
                 if(event.cbutton.button == SDL_CONTROLLER_BUTTON_A){
-                    printf("A\n");
+                    if(Activate() == -3)
+                        return -1;
                 } else if(event.cbutton.button == SDL_CONTROLLER_BUTTON_B){
-                    printf("B\n");
+                    Deactivate();
                 }
                 break;
 
@@ -146,6 +209,13 @@ int Event_Handle(){
                     }
                     if(event.key.keysym.sym == SDLK_F1){
                         ToggleDevMode();
+                    }
+                    if(event.key.keysym.sym == SDLK_RETURN){
+                        if(Activate() == -3)
+                            return -1;
+                    }
+                    if(event.key.keysym.sym == SDLK_BACKSPACE){
+                        Deactivate();
                     }
                     if(event.key.keysym.sym == SDLK_UP){
                         Move(BUTTON_DIR_UP);

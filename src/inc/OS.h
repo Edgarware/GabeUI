@@ -21,3 +21,7 @@
 
 #endif
 #endif
+
+int OS_Launch(char *app, char *args);
+void OS_Shutdown();
+void OS_Restart();
