@@ -6,6 +6,7 @@
 
 #define WINDOW_FLAGS (SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_BORDERLESS)
 #define BUTTON_LIST_MAX 25
+#define BUTTON_MENUITEM_MAX 10
 
 /*
  * Button types are defined here
@@ -14,7 +15,8 @@
 enum button_type {
     BUTTON_TYPE_NONE,
     BUTTON_TYPE_APPBUTTON,
-    BUTTON_TYPE_MENUBUTTON
+    BUTTON_TYPE_MENUBUTTON,
+    BUTTON_TYPE_MENUITEM //Reserved for DebugDraw
 };
 
 //Direction information
@@ -69,6 +71,7 @@ struct MenuItem {
     uint32_t type;
     char* name;
     uint32_t state;
+    SDL_Texture* texture;
     SDL_Rect pos;
     SDL_Rect text_size;
     char* application;
@@ -83,7 +86,7 @@ struct MenuButton{
     SDL_Rect pos;
     SDL_Rect base_size;
     union TopButton* directions[4];
-    struct MenuItem *menu;
+    struct MenuItem **menu;
     uint32_t menu_num;
 };
 
@@ -94,7 +97,7 @@ union TopButton {
     struct MenuButton menubutton;
 };
 
-union TopButton button_list[BUTTON_LIST_MAX];
+union TopButton **button_list;
 uint32_t button_num;
 
 //Common Variables
@@ -102,5 +105,6 @@ float fps;
 SDL_bool dev_mode;
 SDL_Point mouse_pos;
 SDL_bool did_resize;
+TTF_Font *font;
 
 #endif

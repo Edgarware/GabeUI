@@ -32,7 +32,11 @@
 			"type" : "quit"
 		}
 	},
-	"menubutton" :{
-		"image" : "Assets/settings.png"
+	"menubutton" : {
+		"image" : "Assets/settings.png",
+		"menuitem" : {
+			"name" : "Test",
+			"type" : "quit"
+		}
 	}
 }

@@ -34,14 +34,10 @@ void LogDialogWindow(void* userdata, int category, SDL_LogPriority priority, con
 }
 
 void Main_Cleanup(){
-    int i;
+    int i, j;
     Draw_Cleanup();
-    for(i = 0; i < button_num; i++){
-        if(button_list[i].type <= BUTTON_TYPE_NONE)
-            continue;
-        SDL_DestroyTexture(button_list[i].button.texture);
-        //probably have to free more shit
-    }
+    ButtonList_Cleanup();
+    free(button_list);
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
@@ -78,6 +74,11 @@ int main(int argc, char** argv){
     SDL_SetWindowMinimumSize(window, 640, 480); //TODO: Doesnt do jack
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND); //Handle Transparency
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best"); //How we Scale
+
+    //TODO: resize font based on window size
+    //      would need us to reread config on resize, MEH
+	font = TTF_OpenFont("Assets/calibri.ttf", 42);
+    button_list = malloc(BUTTON_LIST_MAX * sizeof(union TopButton*));
 
     atexit(Main_Cleanup);
 

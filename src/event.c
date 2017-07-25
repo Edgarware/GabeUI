@@ -20,20 +20,25 @@ void Event_ScanForController(){
 int Activate(){
     int i, j;
     for(i = 0; i < button_num; i++){
-        if(button_list[i].button.state == BUTTON_STATE_SELECTED){
-            button_list[i].button.state = BUTTON_STATE_ACTIVE;
+        if(button_list[i]->button.state == BUTTON_STATE_SELECTED){
+            button_list[i]->button.state = BUTTON_STATE_ACTIVE;
 
             //TODO: OS_Launch return val check
-            if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
-                OS_Launch(button_list[i].appbutton.application, button_list[i].appbutton.arguments);
-                button_list[i].button.state = BUTTON_STATE_SELECTED;
+            if(button_list[i]->type == BUTTON_TYPE_APPBUTTON){
+                OS_Launch(button_list[i]->appbutton.application, button_list[i]->appbutton.arguments);
+                button_list[i]->button.state = BUTTON_STATE_SELECTED;
+            } else if(button_list[i]->type == BUTTON_TYPE_MENUBUTTON){
+                //Set the first menu-item as selected
+                if(button_list[i]->menubutton.menu_num > 0){
+                    button_list[i]->menubutton.menu[0]->state = BUTTON_STATE_SELECTED;
+                }
             }
         
-        } else if(button_list[i].button.state == BUTTON_STATE_ACTIVE && button_list[i].type == BUTTON_TYPE_MENUBUTTON){
+        } else if(button_list[i]->button.state == BUTTON_STATE_ACTIVE && button_list[i]->type == BUTTON_TYPE_MENUBUTTON){
             //Check menuitems
-            for(j = 0; j < button_list[i].menubutton.menu_num; j++){
-                if(button_list[i].menubutton.menu[j].state == BUTTON_STATE_SELECTED){
-                    switch(button_list[i].menubutton.menu[j].type){
+            for(j = 0; j < button_list[i]->menubutton.menu_num; j++){
+                if(button_list[i]->menubutton.menu[j]->state == BUTTON_STATE_SELECTED){
+                    switch(button_list[i]->menubutton.menu[j]->type){
                         case MENUITEM_QUIT:
                             return -3;
                             break;
@@ -52,10 +57,16 @@ int Activate(){
 }
 
 void Deactivate(){
-    int i;
+    int i, j;
     for(i = 0; i < button_num; i++){
-        if(button_list[i].button.state == BUTTON_STATE_ACTIVE){
-            button_list[i].button.state = BUTTON_STATE_SELECTED;
+        if(button_list[i]->button.state == BUTTON_STATE_ACTIVE){
+            button_list[i]->button.state = BUTTON_STATE_SELECTED;
+
+            if(button_list[i]->type == BUTTON_TYPE_MENUBUTTON){
+                for(j = 0; j < button_list[i]->menubutton.menu_num; j++){
+                    button_list[i]->menubutton.menu[j]->state = BUTTON_STATE_UNSELECTED;
+                }
+            }
         }
     }
 }
@@ -63,32 +74,34 @@ void Deactivate(){
 void Move(int direction){
     int i, j;
     for(i = 0; i < button_num; i++){
-        if(button_list[i].button.state == BUTTON_STATE_SELECTED){
-            if(button_list[i].button.directions[direction] != NULL){
-                button_list[i].button.state = BUTTON_STATE_UNSELECTED;
-                button_list[i].button.directions[direction]->button.state = BUTTON_STATE_SELECTED;
+        if(button_list[i]->button.state == BUTTON_STATE_SELECTED){
+            if(button_list[i]->button.directions[direction] != NULL){
+                button_list[i]->button.state = BUTTON_STATE_UNSELECTED;
+                button_list[i]->button.directions[direction]->button.state = BUTTON_STATE_SELECTED;
             }
             break;
         }
-        if(button_list[i].button.state == BUTTON_STATE_ACTIVE && button_list[i].type == BUTTON_TYPE_MENUBUTTON){
-            for(j = 0; j < button_list[i].menubutton.menu_num; j++){
-                if(button_list[i].menubutton.menu[j].state == BUTTON_STATE_SELECTED){
+        if(button_list[i]->button.state == BUTTON_STATE_ACTIVE && button_list[i]->type == BUTTON_TYPE_MENUBUTTON){
+            for(j = 0; j < button_list[i]->menubutton.menu_num; j++){
+                if(button_list[i]->menubutton.menu[j]->state == BUTTON_STATE_SELECTED){
                     switch(direction){
                         case BUTTON_DIR_UP:
-                            if(j + 1 < button_list[i].menubutton.menu_num){
-                                button_list[i].menubutton.menu[j].state = BUTTON_STATE_UNSELECTED;
-                                button_list[i].menubutton.menu[j+1].state = BUTTON_STATE_SELECTED;
+                            if(j + 1 < button_list[i]->menubutton.menu_num){
+                                button_list[i]->menubutton.menu[j]->state = BUTTON_STATE_UNSELECTED;
+                                button_list[i]->menubutton.menu[j+1]->state = BUTTON_STATE_SELECTED;
                             }
                             break;
                         case BUTTON_DIR_DOWN:
                             if(j > 0){
-                                button_list[i].menubutton.menu[j].state = BUTTON_STATE_UNSELECTED;
-                                button_list[i].menubutton.menu[j-1].state = BUTTON_STATE_SELECTED;
+                                button_list[i]->menubutton.menu[j]->state = BUTTON_STATE_UNSELECTED;
+                                button_list[i]->menubutton.menu[j-1]->state = BUTTON_STATE_SELECTED;
                             }
                             break;
                     }
+                    break;
                 }
             }
+            break;
         }
     }
 }

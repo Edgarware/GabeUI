@@ -8,6 +8,7 @@
 
 //UI Offsets & Scales
 #define UI_PAD 0.03f
+#define MENU_PAD 20
 #define BOTTOMROW_PAD 80
 
 uint32_t appbutton_num;
@@ -39,6 +40,39 @@ void CleanButton(union TopButton *button){
     button->menubutton.menu_num = 0;
 }
 
+void CleanMenuItem(struct MenuItem *item){
+    item->type = MENUITEM_NONE;
+    item->name = "";
+    item->state = BUTTON_STATE_UNSELECTED;
+    item->texture = NULL;
+    item->pos.x = 0;
+    item->pos.y = 0;
+    item->pos.w = 0;
+    item->pos.h = 0;
+    item->text_size.x = 0;
+    item->text_size.y = 0;
+    item->text_size.w = 0;
+    item->text_size.h = 0;
+    item->application = "";
+    item->arguments = "";
+}
+
+void ButtonList_Cleanup(){
+    int i, j;
+    for(i = 0; i < button_num; i++){
+        if(button_list[i]->type == BUTTON_TYPE_NONE)
+            continue;
+        SDL_DestroyTexture(button_list[i]->button.texture);
+        if(button_list[i]->type == BUTTON_TYPE_MENUBUTTON){
+            for(j = 0; j < button_list[i]->menubutton.menu_num; j++){
+                SDL_DestroyTexture(button_list[i]->menubutton.menu[j]->texture);
+                free(button_list[i]->menubutton.menu[j]);
+            }
+            free(button_list[i]->menubutton.menu);
+        }
+        free(button_list[i]);
+    }
+}
 
 void PopulateGridPointers(union TopButton **appgrid, union TopButton **menugrid, int app_col, int app_row){
     int i, j;
@@ -86,11 +120,16 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     jsmn_parser json_parser;
     jsmntok_t json_tokens[100];
     SDL_bool do_free;
+    SDL_bool is_menuitem;
     SDL_Surface* tmp_surface;
+    union TopButton *temp_button = NULL;
+    struct MenuItem *temp_item = NULL;
 
     //TODO:
     // I kinda want it to support hot-loading at some point, pipe dream
-    // If we do that we need to make sure to cleanup the current button list before processing
+
+    //If this is a rerun of the config read we need to clean up the old stuff
+    ButtonList_Cleanup();
 
     //Initialize some variables
     button_num = 0;
@@ -126,49 +165,100 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
         return;
     }
 
-    //TODO: use a buncho mallocs rather than static data copies
-    //      Make this code less of a pain
-    
-    union TopButton temp_button;
-    CleanButton(&temp_button);
+    //TODO: Make this code less of a pain
+
     //Go through tokens and parse out info
+    is_menuitem = SDL_FALSE;
     for(i = 1; i < temp; i++){
         do_free = SDL_TRUE;
-        //We only deal with Strings
-        if(json_tokens[i].type == JSMN_STRING){
+
+        //Handle Objects
+        if(json_tokens[i].type == JSMN_OBJECT){
+            //Previous string was the type
+            i--;
             temp_string = (char *)malloc(json_tokens[i].end - json_tokens[i].start + 1);
             GET_SUBSTRING(conf_text, temp_string, json_tokens[i]);
             temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
 
             //Main/MenuButtons
             if(strcmp(temp_string, "mainbutton") == 0 || strcmp(temp_string, "menubutton") == 0){
-                //Close previous button object if there was one
-                if(temp_button.type != BUTTON_TYPE_NONE){
-                    button_list[button_num] = temp_button;
-                    button_num+=1;
-                    CleanButton(&temp_button);
-                }
                 //There is a maximum number of buttons
                 if(button_num == BUTTON_LIST_MAX){
                     SDL_Log("Tried to add too many buttons");
                     return;
                 }
 
+                if(is_menuitem == SDL_TRUE)
+                    is_menuitem = SDL_FALSE;
+
+                temp_button = malloc(sizeof(union TopButton));
+                button_list[button_num] = temp_button;
+                button_num+=1;
+                CleanButton(temp_button);
+
                 if(strcmp(temp_string, "mainbutton") == 0){
-                    temp_button.type = BUTTON_TYPE_APPBUTTON;
+                    temp_button->type = BUTTON_TYPE_APPBUTTON;
                     appbutton_num += 1;
                 }
                 else if(strcmp(temp_string, "menubutton") == 0){
-                    temp_button.type = BUTTON_TYPE_MENUBUTTON;
+                    temp_button->type = BUTTON_TYPE_MENUBUTTON;
+                    temp_button->menubutton.menu = malloc(sizeof(struct MenuItem*) * BUTTON_MENUITEM_MAX);
                     menubutton_num += 1;
                 }
 
             //MenuItems
             } else if(strcmp(temp_string, "menuitem") == 0) {
-                if(temp_button.type != BUTTON_TYPE_MENUBUTTON){
+                if(temp_button->type != BUTTON_TYPE_MENUBUTTON){
                     printf("BAD MENUITEM\n");
                     continue;
                 }
+                //There is a maximum number of menuitems
+                if(temp_button->menubutton.menu_num == BUTTON_MENUITEM_MAX){
+                    SDL_Log("Tried to add too many MenuItems");
+                    return;
+                }
+
+                temp_item = malloc(sizeof(struct MenuItem));
+                temp_button->menubutton.menu[temp_button->menubutton.menu_num] = temp_item;
+                temp_button->menubutton.menu_num += 1;
+                CleanMenuItem(temp_item);
+                is_menuitem = SDL_TRUE;
+            }
+            i++;
+            free(temp_string);
+        }
+
+        //String Fields
+        if(json_tokens[i].type == JSMN_STRING){
+            temp_string = (char *)malloc(json_tokens[i].end - json_tokens[i].start + 1);
+            GET_SUBSTRING(conf_text, temp_string, json_tokens[i]);
+            temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
+
+            if(strcmp(temp_string, "mainbutton") == 0 || strcmp(temp_string, "menubutton") == 0 || strcmp(temp_string, "menuitem") == 0){
+                //Just ignore this, it'll be caught again as an object
+                is_menuitem = SDL_FALSE;
+            
+            //Name
+            } else if(strcmp(temp_string, "name") == 0) {
+                //Get next string
+                free(temp_string);
+                i += 1;
+                if(json_tokens[i].type != JSMN_STRING){
+                    printf("Whoopsies\n");
+                    continue;
+                }
+
+                temp_string = (char *)malloc(json_tokens[i].end - json_tokens[i].start + 1);
+                GET_SUBSTRING(conf_text, temp_string, json_tokens[i]);
+                temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
+
+                if(is_menuitem == SDL_TRUE){
+                    temp_item->name = temp_string;
+                    //We get the texture when we do the size calculation
+                } else {
+                    temp_button->button.name = temp_string;
+                }
+                do_free = SDL_FALSE;
 
             //Image
             } else if(strcmp(temp_string, "image") == 0) {
@@ -185,15 +275,17 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
 
                 //Load that image
-                tmp_surface = IMG_Load(temp_string);
-                temp_button.button.texture = SDL_CreateTextureFromSurface(renderer, tmp_surface);
-                if(temp_button.appbutton.texture == NULL){
-                    SDL_Log("Failed to load image: %s", SDL_GetError());
-                }
-                SDL_FreeSurface(tmp_surface);
+                if(is_menuitem == SDL_FALSE){
+                    tmp_surface = IMG_Load(temp_string);
+                    temp_button->button.texture = SDL_CreateTextureFromSurface(renderer, tmp_surface);
+                    if(temp_button->appbutton.texture == NULL){
+                        SDL_Log("Failed to load image: %s", SDL_GetError());
+                    }
+                    SDL_FreeSurface(tmp_surface);
 
-                //Make note of our texture's size
-                SDL_QueryTexture(temp_button.button.texture, NULL, NULL, &temp_button.button.base_size.w, &temp_button.button.base_size.h);
+                    //Make note of our texture's size
+                    SDL_QueryTexture(temp_button->button.texture, NULL, NULL, &temp_button->button.base_size.w, &temp_button->button.base_size.h);
+                }
             } else if(strcmp(temp_string, "command") == 0){
                 //Get next string
                 free(temp_string);
@@ -207,8 +299,10 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 GET_SUBSTRING(conf_text, temp_string, json_tokens[i]);
                 temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
 
-                if(temp_button.type == BUTTON_TYPE_APPBUTTON){
-                    temp_button.appbutton.application = temp_string;
+                if(temp_button->type == BUTTON_TYPE_APPBUTTON){
+                    temp_button->appbutton.application = temp_string;
+                } else if(is_menuitem == SDL_TRUE) {
+                    temp_item->application = temp_string;
                 } else {
                     printf("BAD APP\n");
                 }
@@ -226,8 +320,10 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 GET_SUBSTRING(conf_text, temp_string, json_tokens[i]);
                 temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
 
-                if(temp_button.type == BUTTON_TYPE_APPBUTTON){
-                    temp_button.appbutton.arguments = temp_string;
+                if(temp_button->type == BUTTON_TYPE_APPBUTTON){
+                    temp_button->appbutton.arguments= temp_string;
+                } else if(is_menuitem == SDL_TRUE) {
+                    temp_item->arguments = temp_string;
                 } else {
                     printf("BAD ARG\n");
                 }
@@ -242,7 +338,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                     continue;
                 }
 
-                if(temp_button.type != BUTTON_TYPE_MENUBUTTON){
+                if(is_menuitem == SDL_FALSE){
                     continue;
                 }
 
@@ -262,25 +358,16 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                     printf("BAD TYPE\n");
                 }
             }
-            //TODO:
-            //  Command
-            //  Arguments
-            //  MenuItems
+
             if(do_free == SDL_TRUE)
                 free(temp_string);
         } //END IF STRING
     }
-    //Close previous button object if there was one
-    if(temp_button.type != BUTTON_TYPE_NONE){
-        button_list[button_num] = temp_button;
-        button_num+=1;
-        CleanButton(&temp_button);
-    }
 
     //Set starting selected button
     for(i = 0; i < button_num; i++){
-        if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
-            button_list[i].button.state = BUTTON_STATE_SELECTED;
+        if(button_list[i]->type == BUTTON_TYPE_APPBUTTON){
+            button_list[i]->button.state = BUTTON_STATE_SELECTED;
             break;
         }
     }
@@ -289,10 +376,11 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
 }
 
 void Config_OrganizeButtons(SDL_Renderer *renderer) {
-    //Here lies some bad math
+    SDL_Surface* tmp_surface;
+    SDL_Color menuitem_color = {0xFF, 0xFF, 0xFF, 0xFF};
     union TopButton **appgrid;
     union TopButton **menugrid;
-    int i, window_w, window_h, ui_pad;
+    int i, j, window_w, window_h, ui_pad, menu_pad;
     int appbutton_padx, appbutton_pady, xx;
     int temp;
     int num_rows = 0;
@@ -313,11 +401,11 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
 
     //Reset Directional Pointers
     for(i = 0; i < button_num; i++){
-        if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
-            button_list[i].button.directions[BUTTON_DIR_UP] = NULL;
-            button_list[i].button.directions[BUTTON_DIR_DOWN] = NULL;
-            button_list[i].button.directions[BUTTON_DIR_LEFT] = NULL;
-            button_list[i].button.directions[BUTTON_DIR_RIGHT] = NULL;
+        if(button_list[i]->type == BUTTON_TYPE_APPBUTTON){
+            button_list[i]->button.directions[BUTTON_DIR_UP] = NULL;
+            button_list[i]->button.directions[BUTTON_DIR_DOWN] = NULL;
+            button_list[i]->button.directions[BUTTON_DIR_LEFT] = NULL;
+            button_list[i]->button.directions[BUTTON_DIR_RIGHT] = NULL;
         }
     }
 
@@ -325,8 +413,8 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
     //this is the number of buttons we can fit width-wise WITHOUT shrinking (and with minimum padding)
     temp = ui_pad;
     for(i = 0; i < button_num; i++){
-        if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
-            temp += button_list[i].button.base_size.w + ui_pad;
+        if(button_list[i]->type == BUTTON_TYPE_APPBUTTON){
+            temp += button_list[i]->button.base_size.w + ui_pad;
             num_cols += 1;
             if(temp > window_w)
                 break;
@@ -339,8 +427,8 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
     //USING THAT WIDTH, determine the height we have to be to support it
     appbutton_pady = ui_pad + BOTTOMROW_PAD;
     for(i = 0; i < button_num; i++){
-        if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
-            temp = (int)((float)button_list[i].button.base_size.h/(float)button_list[i].button.base_size.w * (float)app_width);
+        if(button_list[i]->type == BUTTON_TYPE_APPBUTTON){
+            temp = (int)((float)button_list[i]->button.base_size.h/(float)button_list[i]->button.base_size.w * (float)app_width);
 
             if(temp > height_max){
                 height_max = temp;
@@ -365,8 +453,8 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
         appbutton_padx = 0;
         col_num = 0;
         for(i = 0; i < button_num; i++){
-            if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
-                temp = (int)((float)button_list[i].button.base_size.w/(float)button_list[i].button.base_size.h * (float)app_height);
+            if(button_list[i]->type == BUTTON_TYPE_APPBUTTON){
+                temp = (int)((float)button_list[i]->button.base_size.w/(float)button_list[i]->button.base_size.h * (float)app_height);
 
                 appbutton_padx += temp + ui_pad;
                 col_num += 1;
@@ -384,31 +472,31 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
     }
 
     //Allocate matricies for use in directional movement
-    appgrid = malloc(sizeof(union TopButton) * num_cols * num_rows);
-    menugrid = malloc(sizeof(union TopButton) * menubutton_num);
+    appgrid = malloc(sizeof(union TopButton*) * num_cols * num_rows);
+    menugrid = malloc(sizeof(union TopButton*) * menubutton_num);
 
     //Set the position data of each button
     height_max = 0;
     col_num = row_num = 0;
     for(i = 0; i < button_num; i++){
-        if(button_list[i].type == BUTTON_TYPE_APPBUTTON){
+        if(button_list[i]->type == BUTTON_TYPE_APPBUTTON){
             if(app_height == 0){
-                button_list[i].button.pos.h =(int)((float)button_list[i].button.base_size.h/(float)button_list[i].button.base_size.w * (float)app_width);
-                button_list[i].button.pos.w = app_width;
+                button_list[i]->button.pos.h =(int)((float)button_list[i]->button.base_size.h/(float)button_list[i]->button.base_size.w * (float)app_width);
+                button_list[i]->button.pos.w = app_width;
             } else {
-                button_list[i].button.pos.w =(int)((float)button_list[i].button.base_size.w/(float)button_list[i].button.base_size.h * (float)app_height);
-                button_list[i].button.pos.h = app_height;
+                button_list[i]->button.pos.w =(int)((float)button_list[i]->button.base_size.w/(float)button_list[i]->button.base_size.h * (float)app_height);
+                button_list[i]->button.pos.h = app_height;
             }
-            button_list[i].button.pos.x = appbutton_padx;
-            button_list[i].button.pos.y = appbutton_pady;
+            button_list[i]->button.pos.x = appbutton_padx;
+            button_list[i]->button.pos.y = appbutton_pady;
 
-            if(button_list[i].button.pos.h > height_max){
-                height_max = button_list[i].button.pos.h;
+            if(button_list[i]->button.pos.h > height_max){
+                height_max = button_list[i]->button.pos.h;
             }
-            appbutton_padx += button_list[i].button.pos.w + ui_pad;
+            appbutton_padx += button_list[i]->button.pos.w + ui_pad;
 
             //Add button to grid
-            appgrid[col_num + (row_num * num_cols)] = &button_list[i];
+            appgrid[col_num + (row_num * num_cols)] = button_list[i];
 
             if(col_num == num_cols - 1){
                 col_num = 0;
@@ -423,21 +511,60 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
     }
 
     //Menubuttons are much less complex
-    temp = 0;
+    col_num = 0;
+    menu_pad = MENU_PAD;
     for(i = 0; i < button_num; i++){
         //Align to bottom-right
-        if(button_list[i].type == BUTTON_TYPE_MENUBUTTON){
-            button_list[i].button.pos.w = button_list[i].button.base_size.w;
-            button_list[i].button.pos.h = button_list[i].button.base_size.h;
-            button_list[i].button.pos.x = window_w - ui_pad - button_list[i].button.pos.w - menubutton_pad;
-            button_list[i].button.pos.y = window_h - ui_pad - button_list[i].button.pos.h;
-            if(button_list[i].button.pos.x < 0 || button_list[i].button.pos.y < 0){
+        if(button_list[i]->type == BUTTON_TYPE_MENUBUTTON){
+            button_list[i]->button.pos.w = button_list[i]->button.base_size.w;
+            button_list[i]->button.pos.h = button_list[i]->button.base_size.h;
+            button_list[i]->button.pos.x = window_w - ui_pad - button_list[i]->button.pos.w - menubutton_pad;
+            button_list[i]->button.pos.y = window_h - ui_pad - button_list[i]->button.pos.h;
+            if(button_list[i]->button.pos.x < 0 || button_list[i]->button.pos.y < 0){
                 //TODO: if window is too small to hold our button, scale it
                 SDL_Log("BAD POSITION CALCULATION");
             }
-            menubutton_pad += window_w - button_list[i].button.pos.x;
-            menugrid[temp] = &button_list[i];
-            temp += 1;
+            menubutton_pad += window_w - button_list[i]->button.pos.x;
+            menugrid[col_num] = button_list[i];
+            col_num += 1;
+
+            //Do menu layout
+            temp = 0;
+            height_max = button_list[i]->button.pos.y;
+            //Get largest width
+            for(j = 0; j < button_list[i]->menubutton.menu_num; j++){
+                if(button_list[i]->menubutton.menu[j]->texture != NULL){
+                    SDL_DestroyTexture(button_list[i]->menubutton.menu[j]->texture);
+                }
+                //Generate texture from name
+                tmp_surface = TTF_RenderText_Blended(font, button_list[i]->menubutton.menu[j]->name, menuitem_color);
+                if(tmp_surface == NULL){
+                    SDL_Log("Failed to load image: %s", SDL_GetError());
+                }
+                button_list[i]->menubutton.menu[j]->texture = SDL_CreateTextureFromSurface(renderer, tmp_surface);
+                if(button_list[i]->menubutton.menu[j]->texture == NULL){
+                    SDL_Log("Failed to load image: %s", SDL_GetError());
+                }
+                SDL_FreeSurface(tmp_surface);
+                //Make note of our texture's size
+                SDL_QueryTexture(button_list[i]->menubutton.menu[j]->texture, NULL, NULL, &button_list[i]->menubutton.menu[j]->text_size.w, &button_list[i]->menubutton.menu[j]->text_size.h);
+                if(button_list[i]->menubutton.menu[j]->text_size.w > temp){
+                    temp = button_list[i]->menubutton.menu[j]->text_size.w;
+                }
+            }
+            temp += menu_pad * 2;
+            //Set the positions of things
+            for(j = 0; j < button_list[i]->menubutton.menu_num; j++){
+                button_list[i]->menubutton.menu[j]->pos.w = temp;
+                button_list[i]->menubutton.menu[j]->pos.h = button_list[i]->menubutton.menu[j]->text_size.h + menu_pad * 2;
+                height_max -= button_list[i]->menubutton.menu[j]->pos.h;
+
+                button_list[i]->menubutton.menu[j]->pos.x = button_list[i]->button.pos.x + button_list[i]->button.pos.w - temp;
+                button_list[i]->menubutton.menu[j]->pos.y = height_max;
+                button_list[i]->menubutton.menu[j]->text_size.x = button_list[i]->menubutton.menu[j]->pos.x + menu_pad;
+                button_list[i]->menubutton.menu[j]->text_size.y = button_list[i]->menubutton.menu[j]->pos.y + menu_pad;
+                printf("item-%d,%d,%d,%d\n", button_list[i]->menubutton.menu[j]->pos.x, button_list[i]->menubutton.menu[j]->pos.y, button_list[i]->menubutton.menu[j]->pos.w, button_list[i]->menubutton.menu[j]->pos.h);
+            }
         }
     }
 
