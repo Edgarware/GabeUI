@@ -1,6 +1,7 @@
 #include "event.h"
 
-#define JOY_DEADZONE 5000
+#define JOY_DEADZONE 7000
+#define JOY_COUNTER  60
 
 SDL_GameController* controller;
 SDL_Window* window;
@@ -141,8 +142,10 @@ void Event_Init(SDL_Window *in_window){
 int Event_Handle(){
     SDL_Event event;
     int16_t joy_x, joy_y;
+    static uint32_t joy_counter;
     
     did_resize = SDL_FALSE;
+    did_config_modify = SDL_FALSE;
 
     // Handle Mouse position (dev mode)
     if(dev_mode == SDL_TRUE){
@@ -159,20 +162,28 @@ int Event_Handle(){
         joy_x = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
         joy_y = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
 
-        //TODO: Use a counter to make this not happen every frame
-        if(abs(joy_x) > JOY_DEADZONE){
-            if(joy_x < 0){
-                Move(BUTTON_DIR_LEFT);
+        if(abs(joy_x) > JOY_DEADZONE || abs(joy_y) > JOY_DEADZONE){
+            if(joy_counter == 0){
+                if(joy_x < 0){
+                    Move(BUTTON_DIR_LEFT);
+                } else {
+                    Move(BUTTON_DIR_RIGHT);
+                }
+                
+                if(joy_y < 0){
+                    Move(BUTTON_DIR_UP);
+                } else {
+                    Move(BUTTON_DIR_DOWN);
+                }
+                joy_counter += 1;
+            } else if(joy_counter > JOY_COUNTER){
+                joy_counter = 0;
             } else {
-                Move(BUTTON_DIR_RIGHT);
+                joy_counter += 1;
             }
-        }
-        if(abs(joy_y) > JOY_DEADZONE){
-            if(joy_y < 0){
-                Move(BUTTON_DIR_UP);
-            } else {
-                Move(BUTTON_DIR_DOWN);
-            }
+            
+        } else {
+            joy_counter = 0;
         }
     }
 

@@ -4,6 +4,9 @@
 
 #define FPS_LIMIT 60.0f
 
+SDL_Window *window;
+SDL_Renderer *renderer;
+
 void LogDialogWindow(void* userdata, int category, SDL_LogPriority priority, const char* message){
     SDL_MessageBoxButtonData buttons[] = { {0, 0, "OK"} };
     SDL_MessageBoxData messagedata = {
@@ -33,19 +36,19 @@ void LogDialogWindow(void* userdata, int category, SDL_LogPriority priority, con
     }
 }
 
+// Called when main exits
 void Main_Cleanup(){
-    int i, j;
     Draw_Cleanup();
     ButtonList_Cleanup();
-    free(button_list);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    TTF_CloseFont(font);
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 }
 
 int main(int argc, char** argv){
-    SDL_Window *window;
-    SDL_Renderer *renderer;
     uint32_t delay_msec, fps_limit_msec;
     uint64_t time_pre_loop, time_post_loop, time_last;
 
@@ -75,11 +78,7 @@ int main(int argc, char** argv){
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND); //Handle Transparency
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best"); //How we Scale
 
-    //TODO: resize font based on window size
-    //      would need us to reread config on resize, MEH
-	font = TTF_OpenFont("Assets/calibri.ttf", 42);
-    button_list = malloc(BUTTON_LIST_MAX * sizeof(union TopButton*));
-
+    font = NULL;
     atexit(Main_Cleanup);
 
     /* Read Config File */
@@ -100,7 +99,10 @@ int main(int argc, char** argv){
         if(Event_Handle() != 0){
             break;
         }
-        if(did_resize == SDL_TRUE){
+        if(did_config_modify == SDL_TRUE){
+            Config_ReadConfig("buttons.json", renderer);
+            Config_OrganizeButtons(renderer);
+        } else if(did_resize == SDL_TRUE){
             Config_OrganizeButtons(renderer);
         }
 
@@ -116,13 +118,8 @@ int main(int argc, char** argv){
         delay_msec = 1000.f*((float)(time_post_loop - time_pre_loop)/(float)SDL_GetPerformanceFrequency());
         delay_msec = fps_limit_msec - delay_msec;
         if(delay_msec <= fps_limit_msec){ //Dont delay if we overran the desired FPS
-            //printf("DELAYED\n")
             SDL_Delay(delay_msec);
         }
     }
-
-    //Cleanup
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
     return 0;
 }

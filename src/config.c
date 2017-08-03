@@ -36,7 +36,6 @@ void CleanButton(union TopButton *button){
     button->appbutton.application = "";
     button->appbutton.arguments = "";
 
-    button->menubutton.menu = NULL;
     button->menubutton.menu_num = 0;
 }
 
@@ -68,7 +67,6 @@ void ButtonList_Cleanup(){
                 SDL_DestroyTexture(button_list[i]->menubutton.menu[j]->texture);
                 free(button_list[i]->menubutton.menu[j]);
             }
-            free(button_list[i]->menubutton.menu);
         }
         free(button_list[i]);
     }
@@ -130,6 +128,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
 
     //If this is a rerun of the config read we need to clean up the old stuff
     ButtonList_Cleanup();
+    memset(button_list, 0, sizeof(union TopButton *) * BUTTON_LIST_MAX);
 
     //Initialize some variables
     button_num = 0;
@@ -166,6 +165,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     }
 
     //TODO: Make this code less of a pain
+    //      Somehow get line number for diagnosing errors for user
 
     //Go through tokens and parse out info
     is_menuitem = SDL_FALSE;
@@ -202,7 +202,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 }
                 else if(strcmp(temp_string, "menubutton") == 0){
                     temp_button->type = BUTTON_TYPE_MENUBUTTON;
-                    temp_button->menubutton.menu = malloc(sizeof(struct MenuItem*) * BUTTON_MENUITEM_MAX);
+                    memset(temp_button->menubutton.menu, 0, sizeof(struct MenuItem*) * MENUITEM_LIST_MAX);
                     menubutton_num += 1;
                 }
 
@@ -213,7 +213,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                     continue;
                 }
                 //There is a maximum number of menuitems
-                if(temp_button->menubutton.menu_num == BUTTON_MENUITEM_MAX){
+                if(temp_button->menubutton.menu_num == MENUITEM_LIST_MAX){
                     SDL_Log("Tried to add too many MenuItems");
                     return;
                 }
@@ -383,9 +383,9 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
     int i, j, window_w, window_h, ui_pad, menu_pad;
     int appbutton_padx, appbutton_pady, xx;
     int temp;
+
     int num_rows = 0;
     int num_cols = 0;
-
     int app_width = 0;
     int app_height = 0;
     int menubutton_pad = 0;
@@ -395,6 +395,12 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
 
     //Loop through list of buttons and arrange
     SDL_GetRendererOutputSize(renderer, &window_w, &window_h);
+
+    //TODO: resize font based on window size
+    if(font != NULL){
+        TTF_CloseFont(font);
+    }
+	font = TTF_OpenFont("Assets/calibri.ttf", 42);
 
     //Determine base padding values
     ui_pad = MAX(UI_PAD * window_w, UI_PAD * window_h);
@@ -563,7 +569,6 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
                 button_list[i]->menubutton.menu[j]->pos.y = height_max;
                 button_list[i]->menubutton.menu[j]->text_size.x = button_list[i]->menubutton.menu[j]->pos.x + menu_pad;
                 button_list[i]->menubutton.menu[j]->text_size.y = button_list[i]->menubutton.menu[j]->pos.y + menu_pad;
-                printf("item-%d,%d,%d,%d\n", button_list[i]->menubutton.menu[j]->pos.x, button_list[i]->menubutton.menu[j]->pos.y, button_list[i]->menubutton.menu[j]->pos.w, button_list[i]->menubutton.menu[j]->pos.h);
             }
         }
     }

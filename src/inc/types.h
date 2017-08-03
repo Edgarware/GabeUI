@@ -6,7 +6,7 @@
 
 #define WINDOW_FLAGS (SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_BORDERLESS)
 #define BUTTON_LIST_MAX 25
-#define BUTTON_MENUITEM_MAX 10
+#define MENUITEM_LIST_MAX 10
 
 /*
  * Button types are defined here
@@ -86,7 +86,7 @@ struct MenuButton{
     SDL_Rect pos;
     SDL_Rect base_size;
     union TopButton* directions[4];
-    struct MenuItem **menu;
+    struct MenuItem *menu[MENUITEM_LIST_MAX];
     uint32_t menu_num;
 };
 
@@ -97,7 +97,7 @@ union TopButton {
     struct MenuButton menubutton;
 };
 
-union TopButton **button_list;
+union TopButton *button_list[BUTTON_LIST_MAX];
 uint32_t button_num;
 
 //Common Variables
@@ -105,6 +105,7 @@ float fps;
 SDL_bool dev_mode;
 SDL_Point mouse_pos;
 SDL_bool did_resize;
+SDL_bool did_config_modify;
 TTF_Font *font;
 
 #endif
