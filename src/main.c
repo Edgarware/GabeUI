@@ -4,9 +4,6 @@
 
 #define FPS_LIMIT 60.0f
 
-SDL_Window *window;
-SDL_Renderer *renderer;
-
 void LogDialogWindow(void* userdata, int category, SDL_LogPriority priority, const char* message){
     SDL_MessageBoxButtonData buttons[] = { {0, 0, "OK"} };
     SDL_MessageBoxData messagedata = {
@@ -37,7 +34,7 @@ void LogDialogWindow(void* userdata, int category, SDL_LogPriority priority, con
 }
 
 // Called when main exits
-void Main_Cleanup(){
+void Main_Cleanup(void){
     Draw_Cleanup();
     ButtonList_Cleanup();
     SDL_DestroyRenderer(renderer);
@@ -68,6 +65,8 @@ int main(int argc, char** argv){
 		SDL_Log("TTF failed to initialize");
 		return 1;
 	}
+
+    OS_Init();
 
     //Make the Window/Renderer
     if(SDL_CreateWindowAndRenderer(640, 480, SDL_WINDOW_RESIZABLE | WINDOW_FLAGS, &window, &renderer)){

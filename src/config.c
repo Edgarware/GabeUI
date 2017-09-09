@@ -138,7 +138,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     //Read File into a single string
     conf_file = fopen(filename, "rb");
     if(conf_file == NULL){
-        SDL_Log("Failed to read Config");
+        SDL_Log("Failed to read file %s", filename);
         return;
     }
     fseek(conf_file, 0, SEEK_END);
@@ -165,7 +165,10 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     }
 
     //TODO: Make this code less of a pain
-    //      Somehow get line number for diagnosing errors for user
+    //      Present parse errors to user in a better fasion
+    //          Line number
+    //          Line
+    //          Issue
 
     //Go through tokens and parse out info
     is_menuitem = SDL_FALSE;
@@ -347,13 +350,13 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
                 temp_string[json_tokens[i].end - json_tokens[i].start] = '\0';
 
                 if(strcmp(temp_string, "quit") == 0){
-
+                    temp_item->type = MENUITEM_QUIT;
                 } else if(strcmp(temp_string, "restart") == 0){
-
+                    temp_item->type = MENUITEM_RESTART;
                 } else if(strcmp(temp_string, "shutdown") == 0){
-
+                    temp_item->type = MENUITEM_SHUTDOWN;
                 } else if(strcmp(temp_string, "application") == 0){
-                
+                    temp_item->type = MENUITEM_APPLICATION;
                 } else {
                     printf("BAD TYPE\n");
                 }

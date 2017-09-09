@@ -1,12 +1,12 @@
 {
 	"mainbutton" : {
 		"image" : "Assets/steam.png",
-		"command" : "C:/Program Files/Steam.exe",
+		"command" : "C:/Program Files (x86)/Steam/Steam.exe",
 		"args" : "--tenfoot"
 	},
 	"mainbutton" : {
 		"image" : "Assets/plex.png",
-		"command" : "openpht.sh"
+		"command" : "notepad.exe"
 	},
 	"mainbutton" : {
 		"image" : "Assets/Kodi.png",
@@ -17,7 +17,8 @@
 		"menuitem" : {
 			"name" : "Test",
 			"type" : "application",
-			"command" : "test"
+			"command" : "notepad.exe",
+			"args" : "/A a.txt"
 		},
 		"menuitem" : {
 			"name" : "Shutdown",

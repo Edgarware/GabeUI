@@ -12,7 +12,7 @@ set linkflags=/SUBSYSTEM:CONSOLE /DEBUG /OUT:%builddir%gabeui.exe
 ::Make
 cl.exe %compilerflags% src\*.c src\jsmn\jsmn.c src/fontcache/SDL_FontCache.c
 ::Link
-link %linkflags% %builddir%*.obj SDL2\lib\x64\*.lib
+link %linkflags% %builddir%*.obj SDL2\lib\x64\*.lib Shell32.lib Ole32.lib Advapi32.lib
 
 ::cleanup
 ::del *.obj *.idb *.pdb

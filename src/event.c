@@ -44,10 +44,13 @@ int Activate(){
                             return -3;
                             break;
                         case MENUITEM_APPLICATION:
+                            OS_Launch(button_list[i]->menubutton.menu[j]->application, button_list[i]->menubutton.menu[j]->arguments);
                             break;
                         case MENUITEM_SHUTDOWN:
+                            OS_Shutdown();
                             break;
                         case MENUITEM_RESTART:
+                            OS_Restart();
                             break;
                     }
                 }
@@ -158,7 +161,7 @@ int Event_Handle(){
     // Handle Keyboard
 
     // Handle Controller Joystick
-    if(SDL_GameControllerGetAttached(controller)){
+    if(SDL_GameControllerGetAttached(controller) && has_focus == SDL_TRUE){
         joy_x = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
         joy_y = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
 
@@ -199,6 +202,15 @@ int Event_Handle(){
                 if(event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED){
                     //Inform the renderer
                     did_resize = SDL_TRUE;
+                } 
+                
+                //TODO: In some configurations, losing focus minimizes window. We dont want that, just want to 
+                else if(event.window.event == SDL_WINDOWEVENT_FOCUS_LOST){
+                    has_focus = SDL_FALSE;
+                }  else if(event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED){
+                    has_focus = SDL_TRUE;
+                } else if(event.window.event == SDL_WINDOWEVENT_MINIMIZED){
+					//SDL_RestoreWindow(window);
                 }
                 break;
 
@@ -222,6 +234,14 @@ int Event_Handle(){
                         return -1;
                 } else if(event.cbutton.button == SDL_CONTROLLER_BUTTON_B){
                     Deactivate();
+                } else if(event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_UP){
+                    Move(BUTTON_DIR_UP);
+                } else if(event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN){
+                    Move(BUTTON_DIR_DOWN);
+                } else if(event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT){
+                    Move(BUTTON_DIR_LEFT);
+                } else if(event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT){
+                    Move(BUTTON_DIR_RIGHT);
                 }
                 break;
 

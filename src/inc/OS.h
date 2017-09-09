@@ -7,8 +7,10 @@
 #include "SDL_image.h"
 #include "SDL_ttf.h"
 
-//#include <windows.h>
-#include <tchar.h>
+#include <windows.h>
+#include <shlobj.h>
+#include <shlwapi.h>
+#include <objbase.h>
 
 //LINUX SPECIFIC CODE/DEFINES
 #elif __linux__
@@ -22,6 +24,7 @@
 #endif
 #endif
 
-int OS_Launch(char *app, char *args);
+void OS_Init();
+int OS_Launch(char* app, char* args);
 void OS_Shutdown();
 void OS_Restart();

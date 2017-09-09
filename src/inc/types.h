@@ -100,12 +100,17 @@ union TopButton {
 union TopButton *button_list[BUTTON_LIST_MAX];
 uint32_t button_num;
 
+
+SDL_Window *window;
+SDL_Renderer *renderer;
+
 //Common Variables
 float fps;
 SDL_bool dev_mode;
 SDL_Point mouse_pos;
 SDL_bool did_resize;
 SDL_bool did_config_modify;
+SDL_bool has_focus;
 TTF_Font *font;
 
 #endif
