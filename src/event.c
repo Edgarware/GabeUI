@@ -24,9 +24,10 @@ int Activate(){
         if(button_list[i]->button.state == BUTTON_STATE_SELECTED){
             button_list[i]->button.state = BUTTON_STATE_ACTIVE;
 
-            //TODO: OS_Launch return val check
             if(button_list[i]->type == BUTTON_TYPE_APPBUTTON){
-                OS_Launch(button_list[i]->appbutton.application, button_list[i]->appbutton.arguments);
+                if(OS_Launch(button_list[i]->appbutton.application, button_list[i]->appbutton.arguments) != 0){
+                    SDL_Log("Error launching application %s %s", button_list[i]->appbutton.application, button_list[i]->appbutton.arguments);
+                }
                 button_list[i]->button.state = BUTTON_STATE_SELECTED;
             } else if(button_list[i]->type == BUTTON_TYPE_MENUBUTTON){
                 //Set the first menu-item as selected
@@ -44,7 +45,9 @@ int Activate(){
                             return -3;
                             break;
                         case MENUITEM_APPLICATION:
-                            OS_Launch(button_list[i]->menubutton.menu[j]->application, button_list[i]->menubutton.menu[j]->arguments);
+                            if(OS_Launch(button_list[i]->menubutton.menu[j]->application, button_list[i]->menubutton.menu[j]->arguments) != 0){
+                                SDL_Log("Error launching application %s %s", button_list[i]->menubutton.menu[j]->application, button_list[i]->menubutton.menu[j]->arguments);
+                            }
                             break;
                         case MENUITEM_SHUTDOWN:
                             OS_Shutdown();
@@ -111,16 +114,22 @@ void Move(int direction){
 }
 
 void ToggleDevMode(){
+    int w, h;
     if(dev_mode == 0){
+        //Make window non-windowed
         dev_mode = SDL_TRUE;
         SDL_ShowCursor(1);
-        //Make window non-windowed
+        SDL_GetWindowMinimumSize(window, &w, &h);
+        if(w != 640 || h != 480){
+            SDL_SetWindowMinimumSize(window, 640, 480);
+            SDL_SetWindowSize(window, 640, 480);
+        }
         SDL_SetWindowFullscreen(window, 0);
         SDL_SetWindowBordered(window, SDL_TRUE);
     } else {
+        //Make window fullscreen
         dev_mode = SDL_FALSE;
         SDL_ShowCursor(0);
-        //Make window fullscreen
         if(WINDOW_FLAGS & SDL_WINDOW_BORDERLESS){
             SDL_SetWindowBordered(window, SDL_FALSE);
         }
@@ -154,7 +163,7 @@ int Event_Handle(){
     if(dev_mode == SDL_TRUE){
         uint32_t mouse_state = SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
         if(mouse_state & SDL_BUTTON(SDL_BUTTON_LEFT)){
-            //TODO: Something maybe
+            //Mouse click state
         }
     }
 
@@ -200,16 +209,15 @@ int Event_Handle(){
             //Window Events
             case SDL_WINDOWEVENT:
                 if(event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED){
-                    //Inform the renderer
                     did_resize = SDL_TRUE;
                 } 
-                
-                //TODO: In some configurations, losing focus minimizes window. We dont want that, just want to 
+
                 else if(event.window.event == SDL_WINDOWEVENT_FOCUS_LOST){
                     has_focus = SDL_FALSE;
-                }  else if(event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED){
+                } else if(event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED){
                     has_focus = SDL_TRUE;
                 } else if(event.window.event == SDL_WINDOWEVENT_MINIMIZED){
+                    //TODO: Not sure if we really want to force non-minimization, but some platforms may need it
 					//SDL_RestoreWindow(window);
                 }
                 break;

@@ -123,8 +123,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     union TopButton *temp_button = NULL;
     struct MenuItem *temp_item = NULL;
 
-    //TODO:
-    // I kinda want it to support hot-loading at some point, pipe dream
+    //TODO: I kinda want it to support hot-loading at some point, pipe dream
 
     //If this is a rerun of the config read we need to clean up the old stuff
     ButtonList_Cleanup();

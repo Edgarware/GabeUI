@@ -48,6 +48,7 @@ void Main_Cleanup(void){
 int main(int argc, char** argv){
     uint32_t delay_msec, fps_limit_msec;
     uint64_t time_pre_loop, time_post_loop, time_last;
+    SDL_DisplayMode screen_mode;
 
     //Setup Errors/Logging
     SDL_LogSetOutputFunction(LogDialogWindow, NULL);
@@ -66,6 +67,7 @@ int main(int argc, char** argv){
 		return 1;
 	}
 
+    //Some OS-specific stuff needs initialization
     OS_Init();
 
     //Make the Window/Renderer
@@ -73,9 +75,15 @@ int main(int argc, char** argv){
         SDL_Log("Could not create Window/Render");
         return 2;
     }
-    SDL_SetWindowMinimumSize(window, 640, 480); //TODO: Doesnt do jack
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND); //Handle Transparency
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best"); //How we Scale
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");        //How we Scale
+    SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");                   //Do VSync (kinda already do this with FPS limiter)
+    SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");   //Never Minimize
+
+    /* Determine Display refresh rate for FPS */
+    //TODO: May want to deal with if the window changes screens, not a likely occurance
+    SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &screen_mode);
+    fps_limit_msec = 1000.0f*(1.0f/screen_mode.refresh_rate);
 
     font = NULL;
     atexit(Main_Cleanup);
@@ -90,7 +98,6 @@ int main(int argc, char** argv){
     Draw_Init(renderer);
     Event_Init(window);
     fps = 0.0f;
-    fps_limit_msec = 1000.0f*(1.0f/FPS_LIMIT);
     time_last = time_pre_loop = 0;
     while(1){
         time_last = time_pre_loop;
@@ -98,6 +105,7 @@ int main(int argc, char** argv){
         if(Event_Handle() != 0){
             break;
         }
+
         if(did_config_modify == SDL_TRUE){
             Config_ReadConfig("buttons.json", renderer);
             Config_OrganizeButtons(renderer);

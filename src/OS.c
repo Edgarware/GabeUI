@@ -1,6 +1,12 @@
 #include "OS.h"
 
+/* ------ WINDOWS ------ */
 #ifdef _WIN32
+#include <windows.h>
+#include <shlobj.h>
+#include <shlwapi.h>
+#include <objbase.h>
+
 void OS_Init(){
     HANDLE hToken;
     TOKEN_PRIVILEGES tkp;
@@ -8,7 +14,7 @@ void OS_Init(){
     //Shellexecute should have the COM initialized
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
     
-    //Get Shutdown Privlidge
+    //Get Shutdown Priviledge
     OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
     LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
     tkp.PrivilegeCount = 1;
@@ -16,7 +22,7 @@ void OS_Init(){
     AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, (PTOKEN_PRIVILEGES)NULL, 0);
 }
 
-int OS_Launch(char* app, char* args){
+int OS_Launch(const char* app, const char* args){
     SHELLEXECUTEINFO launch;
     BOOL ret;
 
@@ -27,7 +33,7 @@ int OS_Launch(char* app, char* args){
     //Populate Launch info
     launch.cbSize = sizeof(launch);
     launch.fMask = SEE_MASK_NOCLOSEPROCESS;
-    launch.hwnd = NULL; //TODO: Maybe link the current window handle, only for errors so probably not worth it
+    launch.hwnd = NULL;
     launch.lpVerb = NULL;
     launch.lpFile = app;
     launch.lpParameters = args;
@@ -39,19 +45,56 @@ int OS_Launch(char* app, char* args){
     if(ret == TRUE){
         return 0;
     } else {
-        return (int)launch.hInstApp;
+        return (int)(launch.hInstApp);
     }
 }
 
+#define WIN_SHUTDOWN_REASON SHTDN_REASON_MINOR_OTHER | SHTDN_REASON_FLAG_PLANNED
+#define WIN_SHUTDOWN_FLAGS SHUTDOWN_FORCE_OTHERS | SHUTDOWN_FORCE_SELF
+
 void OS_Shutdown(){
-    DWORD temp;
-    temp = InitiateShutdown(NULL, NULL, 0, SHUTDOWN_FORCE_OTHERS | SHUTDOWN_FORCE_SELF | SHUTDOWN_POWEROFF, SHTDN_REASON_MINOR_OTHER | SHTDN_REASON_FLAG_PLANNED);
-    printf("%d\n", temp);
+    InitiateShutdown(NULL, NULL, 0,  WIN_SHUTDOWN_FLAGS | SHUTDOWN_POWEROFF, WIN_SHUTDOWN_REASON);
 }
 
 void OS_Restart(){
-    DWORD temp;
-    temp = InitiateShutdown(NULL, NULL, 0, SHUTDOWN_FORCE_OTHERS | SHUTDOWN_FORCE_SELF | SHUTDOWN_RESTART, SHTDN_REASON_MINOR_OTHER | SHTDN_REASON_FLAG_PLANNED);
-    printf("%d\n", temp);
+    InitiateShutdown(NULL, NULL, 0, WIN_SHUTDOWN_FLAGS  | SHUTDOWN_RESTART, WIN_SHUTDOWN_REASON);
+}
+
+/* ------ LINUX ------ */
+#elif __linux__
+#include <unistd.h>
+#include <stdlib.h>
+
+void OS_Init(){
+    //Linux doesnt need any fancy startup
+}
+
+int OSLaunch(const char* app, const char* args){
+    int status;
+    pid_t pid;
+    
+    pid = fork();
+    if(pid == 0){ //baby cakes
+        setpgid(0, 0);
+        execlp(app, app, args, NULL);
+        return -1; //BAD THINGS HAPPENED
+    }
+    else if(pid > 0){ //momma bird
+        setpgid(pid, pid);
+        waitpid(-pid, &status, 0);
+        return 0;
+    }
+    else{ //ERROR
+        return -1;
+    }
+    return -1;
+}
+
+void OS_Shutdown(){
+    system("systemctl halt -i");
+}
+
+void OS_Restart(){
+    system("systemctl reboot -i");
 }
 #endif
