@@ -64,12 +64,13 @@ void OS_Restart(){
 #elif __linux__
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 
 void OS_Init(){
     //Linux doesnt need any fancy startup
 }
 
-int OSLaunch(const char* app, const char* args){
+int OS_Launch(const char* app, const char* args){
     int status;
     pid_t pid;
     
@@ -81,7 +82,7 @@ int OSLaunch(const char* app, const char* args){
     }
     else if(pid > 0){ //momma bird
         setpgid(pid, pid);
-        waitpid(-pid, &status, 0);
+        //waitpid(-pid, &status, 0);
         return 0;
     }
     else{ //ERROR

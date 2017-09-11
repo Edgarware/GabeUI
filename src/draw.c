@@ -44,7 +44,6 @@ void Draw_Cleanup(){
 int Draw_Screen(SDL_Renderer *renderer){
     int i, j;
     union TopButton temp_button;
-    struct MenuItem temp_item;
     uint32_t dev_type = BUTTON_TYPE_NONE;
     SDL_bool has_dev_outline = SDL_FALSE;
 

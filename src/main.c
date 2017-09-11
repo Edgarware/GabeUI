@@ -81,9 +81,11 @@ int main(int argc, char** argv){
     SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");   //Never Minimize
 
     /* Determine Display refresh rate for FPS */
-    //TODO: May want to deal with if the window changes screens, not a likely occurance
-    SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &screen_mode);
-    fps_limit_msec = 1000.0f*(1.0f/screen_mode.refresh_rate);
+    if(SDL_GetDesktopDisplayMode(SDL_GetWindowDisplayIndex(window), &screen_mode) != 0){
+        fps_limit_msec = 1000.0f*(1.0f/60.0f);
+    } else {
+        fps_limit_msec = 1000.0f*(1.0f/screen_mode.refresh_rate);
+    }
 
     font = NULL;
     atexit(Main_Cleanup);

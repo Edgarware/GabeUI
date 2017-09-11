@@ -167,25 +167,26 @@ int Event_Handle(){
         }
     }
 
-    // Handle Keyboard
-
     // Handle Controller Joystick
     if(SDL_GameControllerGetAttached(controller) && has_focus == SDL_TRUE){
         joy_x = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
         joy_y = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
 
+        //TODO: determine which (x or y) is largest to determine order
         if(abs(joy_x) > JOY_DEADZONE || abs(joy_y) > JOY_DEADZONE){
             if(joy_counter == 0){
-                if(joy_x < 0){
-                    Move(BUTTON_DIR_LEFT);
-                } else {
-                    Move(BUTTON_DIR_RIGHT);
-                }
-                
-                if(joy_y < 0){
-                    Move(BUTTON_DIR_UP);
-                } else {
-                    Move(BUTTON_DIR_DOWN);
+                if(abs(joy_x) > abs(joy_y)){
+                    if(joy_x < 0){
+                        Move(BUTTON_DIR_LEFT);
+                    } else{
+                        Move(BUTTON_DIR_RIGHT);
+                    }
+                } else if(abs(joy_x) <= abs(joy_y)){
+                    if(joy_y < 0){
+                        Move(BUTTON_DIR_UP);
+                    } else {
+                        Move(BUTTON_DIR_DOWN);
+                    }
                 }
                 joy_counter += 1;
             } else if(joy_counter > JOY_COUNTER){
@@ -210,9 +211,7 @@ int Event_Handle(){
             case SDL_WINDOWEVENT:
                 if(event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED){
                     did_resize = SDL_TRUE;
-                } 
-
-                else if(event.window.event == SDL_WINDOWEVENT_FOCUS_LOST){
+                } else if(event.window.event == SDL_WINDOWEVENT_FOCUS_LOST){
                     has_focus = SDL_FALSE;
                 } else if(event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED){
                     has_focus = SDL_TRUE;
@@ -237,6 +236,7 @@ int Event_Handle(){
 
             //Controller Buttons
             case SDL_CONTROLLERBUTTONDOWN:
+                if(has_focus == SDL_FALSE) break;
                 if(event.cbutton.button == SDL_CONTROLLER_BUTTON_A){
                     if(Activate() == -3)
                         return -1;
@@ -255,6 +255,7 @@ int Event_Handle(){
 
             //Special Case Keyboard events
             case SDL_KEYDOWN:
+                if(has_focus == SDL_FALSE) break;
                 if(event.key.repeat == 0){
                     if(event.key.keysym.sym == SDLK_ESCAPE){
                         return -1;
