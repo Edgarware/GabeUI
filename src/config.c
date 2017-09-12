@@ -57,7 +57,7 @@ void CleanMenuItem(struct MenuItem *item){
 }
 
 void ButtonList_Cleanup(){
-    int i, j;
+    unsigned int i, j;
     for(i = 0; i < button_num; i++){
         if(button_list[i]->type == BUTTON_TYPE_NONE)
             continue;
@@ -72,8 +72,8 @@ void ButtonList_Cleanup(){
     }
 }
 
-void PopulateGridPointers(union TopButton **appgrid, union TopButton **menugrid, int app_col, int app_row){
-    int i, j;
+void PopulateGridPointers(union TopButton **appgrid, union TopButton **menugrid, unsigned int app_col, unsigned int app_row){
+    unsigned int i, j;
 
     //Populate appbutton pointers
     for(i = 0; i < app_row; i++){
@@ -114,7 +114,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     char *conf_text;
     char *temp_string;
     int64_t conf_length, temp;
-    int i;
+    unsigned int i;
     jsmn_parser json_parser;
     jsmntok_t json_tokens[100];
     SDL_bool do_free;
@@ -382,7 +382,8 @@ void Config_OrganizeButtons(SDL_Renderer *renderer) {
     SDL_Color menuitem_color = {0xFF, 0xFF, 0xFF, 0xFF};
     union TopButton **appgrid;
     union TopButton **menugrid;
-    int i, j, window_w, window_h, ui_pad, menu_pad;
+    unsigned int i, j;
+    int window_w, window_h, ui_pad, menu_pad;
     int appbutton_padx, appbutton_pady, xx;
     int temp;
 

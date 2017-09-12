@@ -5,6 +5,9 @@
 FC_Font* diag_font;
 SDL_Rect window_size;
 SDL_Color bg_color;
+SDL_Color unsel_color;
+SDL_Color sel_color;
+SDL_Color active_color;
 
 //Some helpful macros
 #define RIGHT_ALLIGN(width) (window_size.w - width)
@@ -30,11 +33,26 @@ void Draw_Init(SDL_Renderer *renderer){
     diag_font = FC_CreateFont();
     FC_LoadFont(diag_font, renderer, "Assets/calibri.ttf", 16, FC_MakeColor(0xFF, 0xFF, 0xFF, 0xFF), TTF_STYLE_NORMAL);
 
-    //Set Background color
+    //Set colors
     bg_color.r = 0x60;
     bg_color.g = 0x60;
     bg_color.b = 0x60;
     bg_color.a = 0xFF;
+
+    unsel_color.r = 0x00;
+    unsel_color.g = 0x8C;
+    unsel_color.b = 0x9E;
+    unsel_color.a = 0xFF;
+
+    sel_color.r = 0x5B;
+    sel_color.g = 0xC0;
+    sel_color.b = 0xBE;
+    sel_color.a = 0xFF;
+
+    active_color.r = 0x05;
+    active_color.g = 0x66;
+    active_color.b = 0x8D;
+    active_color.a = 0xFF;
 }
 
 void Draw_Cleanup(){
@@ -42,7 +60,7 @@ void Draw_Cleanup(){
 }
 
 int Draw_Screen(SDL_Renderer *renderer){
-    int i, j;
+    unsigned int i, j;
     union TopButton temp_button;
     uint32_t dev_type = BUTTON_TYPE_NONE;
     SDL_bool has_dev_outline = SDL_FALSE;
@@ -61,7 +79,7 @@ int Draw_Screen(SDL_Renderer *renderer){
         //If a menubutton, add a background
         if(button_list[i]->type == BUTTON_TYPE_MENUBUTTON) {
             if(button_list[i]->button.state == BUTTON_STATE_UNSELECTED){
-                SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0xFF, 0xFF);
+                SDL_SetRenderDrawColor(renderer, unsel_color.r, unsel_color.g, unsel_color.b, unsel_color.a);
 
             //If the menubutton is active we need to draw the menu
             } else if(button_list[i]->button.state == BUTTON_STATE_ACTIVE){
@@ -69,19 +87,19 @@ int Draw_Screen(SDL_Renderer *renderer){
 
                     //Draw background color
                     if(button_list[i]->menubutton.menu[j]->state == BUTTON_STATE_UNSELECTED){
-                        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0xFF, 0xFF);
+                        SDL_SetRenderDrawColor(renderer, unsel_color.r, unsel_color.g, unsel_color.b, unsel_color.a);
                     } else {
-                        SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
+                        SDL_SetRenderDrawColor(renderer, sel_color.r, sel_color.g, sel_color.b, sel_color.a);
                     }
                     SDL_RenderFillRect(renderer, &button_list[i]->menubutton.menu[j]->pos);
 
                     //Draw Text
                     SDL_RenderCopy(renderer, button_list[i]->menubutton.menu[j]->texture, NULL, &button_list[i]->menubutton.menu[j]->text_size);
                 }
-                SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
+                SDL_SetRenderDrawColor(renderer, active_color.r, active_color.g, active_color.b, active_color.a);
 
             } else {
-                SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
+                SDL_SetRenderDrawColor(renderer, sel_color.r, sel_color.g, sel_color.b, sel_color.a);
             }
             
             SDL_RenderFillRect(renderer, &button_list[i]->button.pos);

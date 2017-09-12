@@ -4,7 +4,7 @@ RM=rm
 SDL_CFLAGS := $(shell pkg-config --cflags sdl2 SDL2_image SDL2_ttf)
 SDL_LIBS := $(shell pkg-config --libs sdl2 SDL2_image SDL2_ttf)
 
-override CFLAGS += -DDEBUG -g -O0 -c -Isrc/inc -Isrc -Wall $(SDL_CFLAGS)
+override CFLAGS += -DDEBUG -g -O0 -c -Isrc/inc -Isrc -Wall -Wextra $(SDL_CFLAGS)
 LDFLAGS = 
 
 SRC = $(wildcard src/*.c)

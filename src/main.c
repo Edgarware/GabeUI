@@ -2,9 +2,9 @@
 #include "event.h"
 #include "config.h"
 
-#define FPS_LIMIT 60.0f
-
 void LogDialogWindow(void* userdata, int category, SDL_LogPriority priority, const char* message){
+    (void)userdata;
+    (void)category;
     SDL_MessageBoxButtonData buttons[] = { {0, 0, "OK"} };
     SDL_MessageBoxData messagedata = {
         0,       /*flags*/
@@ -49,6 +49,8 @@ int main(int argc, char** argv){
     uint32_t delay_msec, fps_limit_msec;
     uint64_t time_pre_loop, time_post_loop, time_last;
     SDL_DisplayMode screen_mode;
+    (void)argc;
+    (void)argv;
 
     //Setup Errors/Logging
     SDL_LogSetOutputFunction(LogDialogWindow, NULL);

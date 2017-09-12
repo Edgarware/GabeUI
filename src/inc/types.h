@@ -27,7 +27,7 @@ enum button_dir {
     BUTTON_DIR_RIGHT
 };
 
-//menu type
+//Menu type
 enum menuitem_type {
     MENUITEM_NONE,
     MENUITEM_QUIT,
@@ -45,12 +45,12 @@ enum button_state {
 };
 
 struct BaseButton {
-    uint32_t type;
-    char* name;
-    uint32_t state;
-    SDL_Texture* texture;
-    SDL_Rect pos; //Size of button
-    SDL_Rect base_size; //Size of texture
+    uint32_t type;                  //Button type
+    char* name;                     //Button name - used in debug view
+    uint32_t state;                 //Current button_state
+    SDL_Texture* texture;           //Texture
+    SDL_Rect pos;                   //Size & Position of button
+    SDL_Rect base_size;             //Size of texture (Position is 0,0)
     union TopButton* directions[4]; //Pointer to the button in a particular direction from this one
 };
 
@@ -97,20 +97,19 @@ union TopButton {
     struct MenuButton menubutton;
 };
 
+//Common Variables
 union TopButton *button_list[BUTTON_LIST_MAX];
 uint32_t button_num;
 
-
 SDL_Window *window;
 SDL_Renderer *renderer;
+TTF_Font *font;
 
-//Common Variables
 float fps;
-SDL_bool dev_mode;
 SDL_Point mouse_pos;
+SDL_bool dev_mode;
 SDL_bool did_resize;
 SDL_bool did_config_modify;
 SDL_bool has_focus;
-TTF_Font *font;
 
 #endif

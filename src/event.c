@@ -7,7 +7,8 @@ SDL_GameController* controller;
 SDL_Window* window;
 
 void Event_ScanForController(){
-	for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+    int i;
+	for (i = 0; i < SDL_NumJoysticks(); ++i) {
 		if (SDL_IsGameController(i)) {
 			controller = SDL_GameControllerOpen(i);
 			if (controller)
@@ -19,7 +20,7 @@ void Event_ScanForController(){
 }
 
 int Activate(){
-    int i, j;
+    unsigned int i, j;
     for(i = 0; i < button_num; i++){
         if(button_list[i]->button.state == BUTTON_STATE_SELECTED){
             button_list[i]->button.state = BUTTON_STATE_ACTIVE;
@@ -64,7 +65,7 @@ int Activate(){
 }
 
 void Deactivate(){
-    int i, j;
+    unsigned int i, j;
     for(i = 0; i < button_num; i++){
         if(button_list[i]->button.state == BUTTON_STATE_ACTIVE){
             button_list[i]->button.state = BUTTON_STATE_SELECTED;
@@ -79,7 +80,7 @@ void Deactivate(){
 }
 
 void Move(int direction){
-    int i, j;
+    unsigned int i, j;
     for(i = 0; i < button_num; i++){
         if(button_list[i]->button.state == BUTTON_STATE_SELECTED){
             if(button_list[i]->button.directions[direction] != NULL){
@@ -99,7 +100,7 @@ void Move(int direction){
                             }
                             break;
                         case BUTTON_DIR_DOWN:
-                            if(j > 0){
+                            if(j != 0){
                                 button_list[i]->menubutton.menu[j]->state = BUTTON_STATE_UNSELECTED;
                                 button_list[i]->menubutton.menu[j-1]->state = BUTTON_STATE_SELECTED;
                             }
