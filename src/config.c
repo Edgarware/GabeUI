@@ -159,7 +159,7 @@ void Config_ReadConfig(const char* filename, SDL_Renderer* renderer){
     //Tokenize string
     jsmn_init(&json_parser);
     if((temp = jsmn_parse(&json_parser, conf_text, strlen(conf_text), json_tokens, 100)) < 0){
-        SDL_Log("Error tokenizing json: %ld", temp);
+        SDL_Log("Error tokenizing json: %lld", temp);
         return;
     }
 
