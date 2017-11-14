@@ -30,6 +30,18 @@
                 "ignoreFailures": true
             }
         ]
+    },
+    {
+        "name": "(OSX) Launch",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceRoot}/gabeui",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${workspaceRoot}",
+        "environment": [],
+        "externalConsole": true,
+        "MIMode": "lldb"
     }
     ]
 }

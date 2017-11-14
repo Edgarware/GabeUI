@@ -21,6 +21,21 @@
             }
         ]
     },
+    "osx":{
+        "tasks": [
+            {
+                "taskName": "build",
+                "isBuildCommand": true,
+                "command": "make",
+                "args": []
+            },
+            {
+                "taskName": "clean",
+                "command": "make",
+                "args": ["clean"]
+            }
+        ]
+    },
     "isShellCommand": true,
     "showOutput": "always"
 }

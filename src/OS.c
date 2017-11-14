@@ -60,13 +60,13 @@ void OS_Restart(){
     InitiateShutdown(NULL, NULL, 0, WIN_SHUTDOWN_FLAGS  | SHUTDOWN_RESTART, WIN_SHUTDOWN_REASON);
 }
 
-/* ------ LINUX ------ */
-#elif __linux__
+/* ------ UNIX & LINUX ------ */
+#elif __linux__ || __APPLE__
 #include <unistd.h>
 #include <stdlib.h>
 
 void OS_Init(){
-    //Linux doesnt need any fancy startup
+    //Unix doesnt need any fancy startup
 }
 
 int OS_Launch(const char* app, const char* args){
@@ -88,6 +88,47 @@ int OS_Launch(const char* app, const char* args){
     return -1;
 }
 
+#if __APPLE__
+#include <CoreServices/CoreServices.h>
+#include <Carbon/Carbon.h>
+
+//Event handler for shutdown/restart
+OSStatus OSX_EventHandle(AEEventID EventToSend){
+    AEAddressDesc targetDesc;
+    static const ProcessSerialNumber kPSNOfSystemProcess = { 0, kSystemProcess };
+    AppleEvent eventReply = {typeNull, NULL};
+    AppleEvent appleEventToSend = {typeNull, NULL};
+
+    OSStatus error = noErr;
+
+    error = AECreateDesc(typeProcessSerialNumber, &kPSNOfSystemProcess, sizeof(kPSNOfSystemProcess), &targetDesc);
+    if (error != noErr)
+        return(error);
+
+    error = AECreateAppleEvent(kCoreEventClass, EventToSend, &targetDesc, kAutoGenerateReturnID, kAnyTransactionID, &appleEventToSend);
+    AEDisposeDesc(&targetDesc);
+    if (error != noErr)
+        return(error);
+
+    error = AESend(&appleEventToSend, &eventReply, kAENoReply, kAENormalPriority, kAEDefaultTimeout, NULL, NULL);
+    AEDisposeDesc(&appleEventToSend);
+    if (error != noErr)
+        return(error);
+
+    AEDisposeDesc(&eventReply);
+
+    return(error);
+}
+
+void OS_Shutdown(){
+    OSX_EventHandle(kAEShutDown);
+}
+
+void OS_Restart(){
+    OSX_EventHandle(kAERestart);
+}
+#else
+
 void OS_Shutdown(){
     system("systemctl halt -i");
 }
@@ -95,4 +136,5 @@ void OS_Shutdown(){
 void OS_Restart(){
     system("systemctl reboot -i");
 }
+#endif
 #endif
