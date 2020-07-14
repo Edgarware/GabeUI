@@ -1,43 +1,52 @@
 {
-	"mainbutton" : {
+	"steam" : {
+		"type": "mainbutton",
 		"image" : "Assets/steam.png",
 		"command" : "C:/Program Files (x86)/Steam/Steam.exe",
 		"args" : "--tenfoot"
 	},
-	"mainbutton" : {
+	"plex" : {
+		"type": "mainbutton",
 		"image" : "Assets/plex.png",
 		"command" : "notepad.exe"
 	},
-	"mainbutton" : {
+	"kodi" : {
+		"type": "mainbutton",
 		"image" : "Assets/Kodi.png",
 		"command" : "kodi"
 	},
-	"menubutton" : {
+	"power" : {
+		"type": "menubutton",
 		"image" : "Assets/exit.png",
-		"menuitem" : {
-			"name" : "Test",
-			"type" : "application",
-			"command" : "notepad.exe",
-			"args" : "/A a.txt"
-		},
-		"menuitem" : {
-			"name" : "Shutdown",
-			"type" : "shutdown"
-		},
-		"menuitem" : {
-			"name" : "Restart",
-			"type" : "restart"
-		},
-		"menuitem" : {
-			"name" : "Quit",
-			"type" : "quit"
-		}
+		"menuitems" : [
+			{
+				"name" : "Test",
+				"type" : "application",
+				"command" : "notepad.exe",
+				"args" : "/A a.txt"
+			},
+			{
+				"name" : "Shutdown",
+				"type" : "shutdown"
+			},
+			{
+				"name" : "Restart",
+				"type" : "restart"
+			},
+			{
+				"name" : "Quit",
+				"type" : "quit"
+			}
+		]
 	},
-	"menubutton" : {
+	"settings" : {
+		"type": "menubutton",
 		"image" : "Assets/settings.png",
-		"menuitem" : {
-			"name" : "Test",
-			"type" : "quit"
-		}
+		"menuitems" : [
+			{
+				"name" : "Test",
+				"type" : "quit"
+			}
+		]
 	}
 }
