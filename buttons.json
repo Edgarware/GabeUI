@@ -18,7 +18,7 @@
 	"power" : {
 		"type": "menubutton",
 		"image" : "Assets/exit.png",
-		"menuitems" : [
+		"items" : [
 			{
 				"name" : "Test",
 				"type" : "application",
@@ -42,7 +42,7 @@
 	"settings" : {
 		"type": "menubutton",
 		"image" : "Assets/settings.png",
-		"menuitems" : [
+		"items" : [
 			{
 				"name" : "Test",
 				"type" : "quit"
